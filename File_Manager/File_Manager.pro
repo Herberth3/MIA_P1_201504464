@@ -15,35 +15,36 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += main.cpp \
-    lexico.cpp \
     sintactico.cpp \
+    scanner.cpp \
+    parametro.cpp \
     mkdisk.cpp \
-    ejecutar.cpp \
-    ejecutar.cpp \
-    main.cpp \
-    mkdisk.cpp \
-    driver.cpp \
-    driver.cpp \
-    ejecutar.cpp \
-    main.cpp \
-    mkdisk.cpp
+    comando.cpp \
+    rmdisk.cpp \
+    fdisk.cpp \
+    mount.cpp \
+    unmount.cpp \
+    mkfs.cpp \
+    archivo.cpp \
+    carpeta.cpp \
+    recovery.cpp \
+    rep.cpp
 
 HEADERS += \
-    lexico.h \
+    sintactico.y \
     sintactico.h \
+    scanner.h \
+    parametro.h \
     mkdisk.h \
-    ejecutar.h \
-    ejecutar.h \
-    mkdisk.h \
-    driver.h \
-    parser.yy \
-    driver.h \
-    ejecutar.h \
-    mkdisk.h \
-    parser.yy
-
-DISTFILES += \
-    Other/lexico.l \
     lexico.l \
-    lexico.l \
-    sintactico.yy
+    comando.h \
+    tipo_estructura.h \
+    rmdisk.h \
+    fdisk.h \
+    mount.h \
+    unmount.h \
+    mkfs.h \
+    archivo.h \
+    carpeta.h \
+    recovery.h \
+    rep.h
