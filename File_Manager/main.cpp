@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
     QString line;
 
     while (line != "salir") {//esto me sirve para seguir leyendo siempre los comandos sin salirme
-        cout << "------------------------------Ingrese un comando------------------------------"<<endl;
+        cout << "_______________________________Ingrese un comando_____________________________"<<endl;
 
         line = qtin.readLine();
         if(line != "salir"){
@@ -40,11 +40,10 @@ int main(int argc, char *argv[])
 
                 if(yyparse()==0) // Si nos da un número negativo, signifca error.
                 {
-                    printf("\nComando ejecutado correctamente\n");
 
                 }else {
 
-                    printf("\nhay errores\n");
+                    printf("\n<OCURRIO UN ERROR!>\n");
                 }
                 yy_delete_buffer(buffer);
 
