@@ -51,6 +51,7 @@ class Comando * comand;
 %token<TEXT> r_mkdir;
 %token<TEXT> r_cp;
 %token<TEXT> r_pause;
+%token<TEXT> r_exec;
 %token<TEXT> r_size;
 %token<TEXT> r_unit;
 %token<TEXT> r_fit;
@@ -92,6 +93,7 @@ class Comando * comand;
 %token<TEXT> id_mount;
 %token<TEXT> id_fs;
 %token<TEXT> directorio;
+%token<TEXT> directorio_exec;
 
 
 %type <param> PARAMETERS; // lista de instrucciones
@@ -114,6 +116,7 @@ INICIO
 COMMAND
     : r_mkdisk LIST_PARAMETERS  { comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_rmdisk s_menos r_path s_igual directorio      { Parametro *nuevo = new Parametro($3, $5); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
+    | r_rmdisk s_menos r_path s_igual cadena_string      { Parametro *nuevo = new Parametro($3, $5); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_fdisk LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_mount LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_unmount s_menos r_id s_igual id_mount      { Parametro *nuevo = new Parametro($3, $5); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
@@ -122,6 +125,8 @@ COMMAND
     | r_mkdir LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_cp LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_pause      { comando.Ejecutar($1, listParam); $$ = new Comando(); }
+    | r_exec s_menos r_path s_igual directorio_exec      { Parametro *nuevo = new Parametro($3, $5); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
+    | r_exec s_menos r_path s_igual cadena_string      { Parametro *nuevo = new Parametro($3, $5); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
 ;
 
 LIST_PARAMETERS

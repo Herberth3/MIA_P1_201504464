@@ -16,7 +16,8 @@ enum COMANDO
     MKFILE = 7,
     MKDIR = 8,
     CP = 9,
-    PAUSE = 10
+    PAUSE = 10,
+    EXEC = 11
 };
 
 enum PARAMETRO
@@ -126,7 +127,7 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
                     return;
                 }
             }else {
-                cout<<"Error. Parametro no permitido en rmdisk: "<<nombre_param.toStdString()<<endl;
+                cout<<"Error. Parametro no permitido en RMDISK: "<<nombre_param.toStdString()<<endl;
                 return;
             }
         }
@@ -385,6 +386,22 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
                 }
             } else {
                 cout<<"Error. Parametro no permitido en CP: "<<nombre_param.toStdString()<<endl;
+                return;
+            }
+        }
+            break;
+        case EXEC:
+        {   // ********************** C O M A N D O   E X E C *************************
+            if (ID_param == PATH) {
+                if(this->path_flag == 0){
+                    this->path_valor = valor_param;
+                    this->path_flag = 1;
+                } else {
+                    cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
+                    return;
+                }
+            }else {
+                cout<<"Error. Parametro no permitido en EXEC: "<<nombre_param.toStdString()<<endl;
                 return;
             }
         }
@@ -657,6 +674,12 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
         cin >> respuesta;
     }
         break;
+    case EXEC:
+    {   // ********************** C O M A N D O   R M D I S K *************************
+        Exec *script = new Exec(this->path_valor);
+        script->Ejecutar();
+    }
+        break;
     default:
         break;
     }
@@ -675,6 +698,7 @@ int Comando::getComandoID(QString comando)
     if(comando == "mkdir") return 8;
     if(comando == "cp") return 9;
     if(comando == "pause") return 10;
+    if(comando == "exec") return 11;
 }
 
 int Comando::getParametroID(QString parametro)

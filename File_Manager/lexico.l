@@ -36,6 +36,7 @@ ID_FS                               {NUMERO}[f][s]
 CADENA_STRING               [\"][^\"\n]*[\"\n]
 DELIMITADOR             [\t\r\f" "]
 DIRECTORIO              ([\/]{IDENTIFICADOR})+[\.][d][k]
+DIRECTORIO_EXEC    ([\/]{IDENTIFICADOR})+[\.][s][c][r][i][p][t]
 
 %x COM
 
@@ -52,6 +53,7 @@ DIRECTORIO              ([\/]{IDENTIFICADOR})+[\.][d][k]
 "MKDIR"             { strcpy(yylval.TEXT, yytext); return r_mkdir; }
 "CP"             { strcpy(yylval.TEXT, yytext); return r_cp; }
 "PAUSE"             { strcpy(yylval.TEXT, yytext); return r_pause; }
+"EXEC"             { strcpy(yylval.TEXT, yytext); return r_exec; }
 "SIZE"              { strcpy(yylval.TEXT, yytext); return r_size; }
 "UNIT"                 { strcpy(yylval.TEXT, yytext); return r_unit; }
 "FIT"                 { strcpy(yylval.TEXT, yytext); return r_fit; }
@@ -75,6 +77,7 @@ DIRECTORIO              ([\/]{IDENTIFICADOR})+[\.][d][k]
 {ID_FS}         { strcpy(yylval.TEXT, yytext); return id_fs; }
 {DELIMITADOR}           {}
 {DIRECTORIO}                { strcpy(yylval.TEXT, yytext); return directorio; }
+{DIRECTORIO_EXEC}                { strcpy(yylval.TEXT, yytext); return directorio_exec; }
 
 
 "." { strcpy(yylval.TEXT, yytext); return punto; }

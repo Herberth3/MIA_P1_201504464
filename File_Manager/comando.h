@@ -10,6 +10,7 @@
 #include "mkfs.h"
 #include "archivo.h"
 #include "carpeta.h"
+#include "exec.h"
 
 using namespace std;
 

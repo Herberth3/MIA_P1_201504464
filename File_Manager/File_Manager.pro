@@ -28,7 +28,8 @@ SOURCES += main.cpp \
     archivo.cpp \
     carpeta.cpp \
     recovery.cpp \
-    rep.cpp
+    rep.cpp \
+    exec.cpp
 
 HEADERS += \
     sintactico.y \
@@ -47,4 +48,5 @@ HEADERS += \
     archivo.h \
     carpeta.h \
     recovery.h \
-    rep.h
+    rep.h \
+    exec.h
