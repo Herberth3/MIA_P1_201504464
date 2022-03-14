@@ -94,7 +94,7 @@ void Mkdisk::Ejecutar()
     }
 
     // El comando bs=1024 termina de multiplicar a tamanoDisk para completar los byte establecidos para cada archivo tipo disco
-    // Comando para terminar de crear el archivo .disk y establecerle el tamaño que ocupara
+    // Comando para terminar de crear el archivo .dk y establecerle el tamaño que ocupara llenandolo de ceros
     // CREAR DISCO FISICO
     cout<<"Creando disco, espere......."<<endl;
     string comando = "dd if=/dev/zero of=\"" + this->path.toStdString() + "\" bs=1024 count=" + std::to_string(tamanoDisk);
@@ -129,8 +129,8 @@ QString Mkdisk::getDirectorioCarpetas(QString ruta)
 void Mkdisk:: CrearDirectorio(QString ruta){
     QString path_carpetas = this->getDirectorioCarpetas(ruta);
 
-    string c = "mkdir -p \'" + path_carpetas.toStdString() + "\'";
+    string c = "sudo mkdir -p \'" + path_carpetas.toStdString() + "\'";
     system(c.c_str());
-    string c2 = "chmod -R 777 \'" + path_carpetas.toStdString() + "\'";
+    string c2 = "sudo chmod -R 777 \'" + path_carpetas.toStdString() + "\'";
     system(c2.c_str());
 }
