@@ -51,9 +51,9 @@ void Fdisk::Modificar_Espacio(int add, QString unit, QString name, QString path)
         fread(&mbr_auxiliar, sizeof(MBR), 1, disco_actual);
 
         for (int i = 0; i < 4; i++){
-
+            // Comparar si el nombre de la particion a buscar existe
             if (strcmp(mbr_auxiliar.mbr_partition[i].part_name, name.toStdString().c_str()) == 0){
-
+                // Se verifica si lo agregado no resta mas al tamaño de la particion
                 if ((cantidad_add + mbr_auxiliar.mbr_partition[i].part_size) > 0){
 
                     if (mbr_auxiliar.mbr_partition[i + 1].part_start != 0){
@@ -81,7 +81,7 @@ void Fdisk::Modificar_Espacio(int add, QString unit, QString name, QString path)
                     }
                 } else{
 
-                    cout<<"Error: Tamaño menor a cero, no se puede quitar."<<endl;
+                    cout<<"Error: Tamaño a quitar es mayor al de la particion"<<endl;
                 }
             }
         }
@@ -337,7 +337,8 @@ void Fdisk::Crear_Particion(int size, QString unit, QString name, QString path, 
         // Si la particion esta activa o ya existe
         if (mbr_temporal.mbr_partition[i].part_status != '0') {
 
-            // Se valida que no haya particion Extendida
+            // Entra al if: Si no existe Extendida y la nueva particion es Extendida
+            // Entra al if: Si existe o no Extendida y la nueva particion es Primaria
             if (!(nueva_particion.part_type == 'E' && no_Extendidas > 0)) {
 
                 // Establecer primer ajuste, posicionando el part_start en el primer espacio vacio que encuentre y en donde quepa el part_size de la nueva particion
@@ -384,6 +385,7 @@ void Fdisk::Crear_Particion(int size, QString unit, QString name, QString path, 
         }
     }
 
+    // Una de las 4 particiones esta libre y es diferente a la primera
     for (int i = 0; i < 4; i++) {
 
         // Ingresa al if si la particion esta inactiva o no existe
@@ -434,17 +436,19 @@ void Fdisk::Crear_Particion(int size, QString unit, QString name, QString path, 
         rewind(disco_actual2);
         fwrite(&mbr_temporal, sizeof(MBR), 1, disco_actual2);
 
-        // Crear el primer EBR
+        // Creacion de una particion Extendida junto a un EBR
         if (part_startExtendida != 0) {
 
             rewind(disco_actual2);
             EBR ebr_logica;
-            ebr_logica.part_start = part_startExtendida;
-            strcpy(ebr_logica.part_name, "NoName");
+
             ebr_logica.part_status = '0';
             ebr_logica.part_fit = ' ';
+            ebr_logica.part_start = part_startExtendida;
             ebr_logica.part_size = 0;
             ebr_logica.part_next = -1;
+            strcpy(ebr_logica.part_name, "Nothing");
+
             fseek(disco_actual2, ebr_logica.part_start, SEEK_SET);
             fwrite(&ebr_logica, sizeof(EBR), 1, disco_actual2);
         }
@@ -468,7 +472,6 @@ void Fdisk::Crear_Particion(int size, QString unit, QString name, QString path, 
             return;
         }
     }
-
 }
 
 void Fdisk::Crear_Logica(Partition particion, QString path)
@@ -481,9 +484,9 @@ void Fdisk::Crear_Logica(Partition particion, QString path)
 
     nueva_logica.part_status = '1';
     nueva_logica.part_fit = particion.part_fit;
-    strcpy(nueva_logica.part_name, particion.part_name);
-    nueva_logica.part_next = -1;
     nueva_logica.part_size = particion.part_size;
+    nueva_logica.part_next = -1;
+    strcpy(nueva_logica.part_name, particion.part_name);
 
     MBR mbr_auxiliar;
     FILE *disco_actual = fopen(path.toStdString().c_str(), "rb+");
@@ -525,18 +528,18 @@ void Fdisk::Crear_Logica(Partition particion, QString path)
                     // Siguiente particion logica lista para ser creada la proxima vez que se quiera otra logica
                     EBR addLogic;
 
-                    addLogic.part_start = nueva_logica.part_next;
                     addLogic.part_status = '0';
                     addLogic.part_fit = ' ';
+                    addLogic.part_start = nueva_logica.part_next;
                     addLogic.part_size = 0;
                     addLogic.part_next = -1;
-                    strcpy(addLogic.part_name, "NoName");
+                    strcpy(addLogic.part_name, "Nothing");
 
                     fseek(disco_actual, addLogic.part_start, SEEK_SET);
                     fwrite(&addLogic, sizeof(EBR), 1, disco_actual);
 
                     finalizar = true;
-                    cout<<" Particion logica creada exitosamente"<<endl;
+                    cout<<" Particion logica creada exitosamente: "<< nueva_logica.part_name<< endl;
                 }
 
                 fseek(disco_actual, ebr_logica.part_next, SEEK_SET);
