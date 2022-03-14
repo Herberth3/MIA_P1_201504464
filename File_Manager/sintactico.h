@@ -92,8 +92,9 @@ extern int yydebug;
     numero_real = 302,
     cadena_string = 303,
     identificador = 304,
-    id_fs = 305,
-    directorio = 306
+    id_mount = 305,
+    id_fs = 306,
+    directorio = 307
   };
 #endif
 
@@ -111,7 +112,7 @@ char TEXT[256];
 class Parametro *param;
 class Comando * comand;
 
-#line 115 "sintactico.h" /* yacc.c:1909  */
+#line 116 "sintactico.h" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;

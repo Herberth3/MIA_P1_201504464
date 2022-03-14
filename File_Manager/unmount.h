@@ -6,11 +6,10 @@ class Unmount
 {
 public:
     Unmount();
-    void Ejecutar(QString id, Mount mount);
+    void Ejecutar(QString id, Mount &mount);
 
 private:
     QString identificador;
-    Mount montaje;
 };
 
 #endif // UNMOUNT_H

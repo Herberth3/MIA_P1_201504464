@@ -5,37 +5,38 @@ Unmount::Unmount()
 
 }
 
-void Unmount::Ejecutar(QString id, Mount mount)
+void Unmount::Ejecutar(QString id, Mount &mount)
 {
-    this->identificador = id;
-    this->montaje = mount;
+    this->identificador = id; // Ejemplo: 6413f
+    this->identificador.remove(0, 2); // Ejemplo: 13f
 
-    char letra = this->identificador.toStdString().c_str()[2];
-    char numero = this->identificador.toStdString().c_str()[3];
-    bool desmontado = false;
-    int numeroInt = (int) numero - 48;
+    int id_size = this->identificador.size();
+    char letra = this->identificador.toStdString().at(id_size - 1); // Ejemplo: f
+    QString numero = this->identificador.remove(id_size - 1, 1); // Ejemplo: 13
+    int numeroInt =  numero.toInt();
+    bool is_desmontado = false;
 
     for (int i = 0; i < 26; i++){
 
-        if (this->montaje.discos[i].letra == letra){
+        if (mount.discos[i].numero == numeroInt){
 
             for (int j = 0; j < 99; j++){
 
-                if (this->montaje.discos[i].particiones[j].numero == numeroInt){
+                if (mount.discos[i].particiones[j].letra == letra){
 
-                    cout<<"Particion desmontada: vd"<<this->montaje.discos[i].letra<<this->montaje.discos[i].particiones[j].numero<<endl;
-                    this->montaje.discos[i].particiones[j].estado = 0;
-                    desmontado = true;
+                    cout<<"Particion desmontada: 64"<<mount.discos[i].numero<<mount.discos[i].particiones[j].letra<<endl;
+                    mount.discos[i].particiones[j].estado = 0;
+                    is_desmontado = true;
                 }
             }
         }
     }
 
-    if(!desmontado){
-        cout << "Error: ID no existe, no se desmonto la particion." <<endl;
+    if(!is_desmontado){
+        cout << "Error: No fue posible desmontar la particion. No existe el ID." <<endl;
     }
 
     /*******E L I M I N A R***********/
-    this->montaje.Show_Montajes();
+    mount.Show_Montajes();
     /*******E L I M I N A R***********/
 }

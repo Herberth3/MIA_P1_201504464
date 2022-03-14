@@ -89,6 +89,7 @@ class Comando * comand;
 %token<TEXT> numero_real;
 %token<TEXT> cadena_string;
 %token<TEXT> identificador;
+%token<TEXT> id_mount;
 %token<TEXT> id_fs;
 %token<TEXT> directorio;
 
@@ -112,10 +113,10 @@ INICIO
 
 COMMAND
     : r_mkdisk LIST_PARAMETERS  { comando.Ejecutar($1, listParam); $$ = new Comando(); }
-    | r_rmdisk s_menos r_path s_virulilla dos_puntos s_virulilla directorio      { Parametro *nuevo = new Parametro($3, $7); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
+    | r_rmdisk s_menos r_path s_igual directorio      { Parametro *nuevo = new Parametro($3, $5); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_fdisk LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_mount LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
-    | r_unmount s_menos r_id s_virulilla dos_puntos s_virulilla identificador      { Parametro *nuevo = new Parametro($3, $7); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
+    | r_unmount s_menos r_id s_igual id_mount      { Parametro *nuevo = new Parametro($3, $5); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_mkfs LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_mkfile LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_mkdir LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
@@ -129,20 +130,21 @@ LIST_PARAMETERS
 ;
 
 PARAMETERS
-    : s_menos r_size s_virulilla dos_puntos s_virulilla numero_entero  { $$ = new Parametro($2, $6); listParam.append($$); }
-    | s_menos r_path s_virulilla dos_puntos s_virulilla cadena_string      { $$ = new Parametro($2, $6); listParam.append($$); }
-    | s_menos r_path s_virulilla dos_puntos s_virulilla directorio      { $$ = new Parametro($2, $6); listParam.append($$); }
-    | s_menos r_unit s_virulilla dos_puntos s_virulilla identificador { $$ = new Parametro($2, $6); listParam.append($$); }
-    | s_menos r_fit s_virulilla dos_puntos s_virulilla identificador { $$ = new Parametro($2, $6); listParam.append($$); }
-    | s_menos r_type s_virulilla dos_puntos s_virulilla identificador { $$ = new Parametro($2, $6); listParam.append($$); }
-    | s_menos r_delete s_virulilla dos_puntos s_virulilla identificador { $$ = new Parametro($2, $6); listParam.append($$); }
-    | s_menos r_name s_virulilla dos_puntos s_virulilla identificador { $$ = new Parametro($2, $6); listParam.append($$); }
-    | s_menos r_add s_virulilla dos_puntos s_virulilla numero_real { $$ = new Parametro($2, $6); listParam.append($$); }
-    | s_menos r_id s_virulilla dos_puntos s_virulilla identificador { $$ = new Parametro($2, $6); listParam.append($$); }
-    | s_menos r_fs s_virulilla dos_puntos s_virulilla id_fs { $$ = new Parametro($2, $6); listParam.append($$); }
+    : s_menos r_size s_igual numero_entero  { $$ = new Parametro($2, $4); listParam.append($$); }
+    | s_menos r_path s_igual cadena_string      { $$ = new Parametro($2, $4); listParam.append($$); }
+    | s_menos r_path s_igual directorio      { $$ = new Parametro($2, $4); listParam.append($$); }
+    | s_menos r_unit s_igual identificador { $$ = new Parametro($2, $4); listParam.append($$); }
+    | s_menos r_fit s_igual identificador { $$ = new Parametro($2, $4); listParam.append($$); }
+    | s_menos r_type s_igual identificador { $$ = new Parametro($2, $4); listParam.append($$); }
+    | s_menos r_delete s_igual identificador { $$ = new Parametro($2, $4); listParam.append($$); }
+    | s_menos r_name s_igual identificador { $$ = new Parametro($2, $4); listParam.append($$); }
+    | s_menos r_name s_igual cadena_string { $$ = new Parametro($2, $4); listParam.append($$); }
+    | s_menos r_add s_igual numero_real { $$ = new Parametro($2, $4); listParam.append($$); }
+    | s_menos r_id s_igual identificador { $$ = new Parametro($2, $4); listParam.append($$); }
+    | s_menos r_fs s_igual id_fs { $$ = new Parametro($2, $4); listParam.append($$); }
     | s_menos r_p { $$ = new Parametro($2, ""); listParam.append($$); }
-    | s_menos r_cont s_virulilla dos_puntos s_virulilla cadena_string { $$ = new Parametro($2, $6); listParam.append($$); }
-    | s_menos r_cont s_virulilla dos_puntos s_virulilla directorio { $$ = new Parametro($2, $6); listParam.append($$); }
-    | s_menos r_dest s_virulilla dos_puntos s_virulilla cadena_string { $$ = new Parametro($2, $6); listParam.append($$); }
-    | s_menos r_dest s_virulilla dos_puntos s_virulilla directorio { $$ = new Parametro($2, $6); listParam.append($$); }
+    | s_menos r_cont s_igual cadena_string { $$ = new Parametro($2, $4); listParam.append($$); }
+    | s_menos r_cont s_igual directorio { $$ = new Parametro($2, $4); listParam.append($$); }
+    | s_menos r_dest s_igual cadena_string { $$ = new Parametro($2, $4); listParam.append($$); }
+    | s_menos r_dest s_igual directorio { $$ = new Parametro($2, $4); listParam.append($$); }
 ;

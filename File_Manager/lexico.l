@@ -24,15 +24,18 @@ int linea = 0;
 /*-----------------------------------
 |       Expresiones regulares        |
 ------------------------------------*/
-NUMERO_ENTERO           [0-9]+
 NUMERO_REAL             [-]?[0-9]+
-LETRA               [a-zA-ZÑñáéíóúÁÉÍÓÚ]+
+NUMERO_ENTERO           [0-9]+
+NUMERO                          [0-9]
+LETRAS               [a-zA-ZÑñáéíóúÁÉÍÓÚ]+
+LETRA               [a-zA-ZÑñáéíóúÁÉÍÓÚ]
 
-IDENTIFICADOR               {LETRA}({LETRA}|{NUMERO_ENTERO}|"_")*
-ID_FS                               {NUMERO_ENTERO}({LETRA})+
+IDENTIFICADOR               {LETRAS}({LETRAS}|{NUMERO_ENTERO}|"_")*
+ID_MOUNT                        {NUMERO_ENTERO}{LETRA}
+ID_FS                               {NUMERO}[f][s]
 CADENA_STRING               [\"][^\"\n]*[\"\n]
 DELIMITADOR             [\t\r\f" "]
-DIRECTORIO              ([\/]{IDENTIFICADOR})+[\.][d][i][s][k]
+DIRECTORIO              ([\/]{IDENTIFICADOR})+[\.][d][k]
 
 %x COM
 
@@ -68,6 +71,7 @@ DIRECTORIO              ([\/]{IDENTIFICADOR})+[\.][d][i][s][k]
 {NUMERO_REAL}     { strcpy(yylval.TEXT, yytext); return numero_real; }
 {CADENA_STRING}         { strcpy(yylval.TEXT, yytext); return cadena_string; }
 {IDENTIFICADOR}         { strcpy(yylval.TEXT, yytext); return identificador; }
+{ID_MOUNT}         { strcpy(yylval.TEXT, yytext); return id_mount; }
 {ID_FS}         { strcpy(yylval.TEXT, yytext); return id_fs; }
 {DELIMITADOR}           {}
 {DIRECTORIO}                { strcpy(yylval.TEXT, yytext); return directorio; }
