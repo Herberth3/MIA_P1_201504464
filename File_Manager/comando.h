@@ -20,7 +20,7 @@ public:
     void Ejecutar(QString command, QList<Parametro *> parameters);
 
 private:
-    QString comando;
+    int comandoID;
     QList<Parametro *> parametros;
 
     int size_valor;
@@ -51,7 +51,12 @@ private:
     int cont_flag;
     int dest_flag;
 
+    // Instancia unica de MOUNT para manejar la estructura encargada de tener
+    // las particiones en memoria. Unica para que no se reinscriba la instancia y se pierda la informacion.
     Mount montaje;
+
+    int getComandoID(QString comando);
+    int getParametroID(QString parametro);
 
 };
 
