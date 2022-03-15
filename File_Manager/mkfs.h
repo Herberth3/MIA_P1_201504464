@@ -4,6 +4,7 @@
 #include "mount.h"
 #include "unmount.h"
 #include "tipo_estructura.h"
+#include "structs.h"
 #include "archivo.h"
 #include "carpeta.h"
 
@@ -19,7 +20,7 @@ private:
     QString tipo_sistema;
     Mount montaje;
 
-    void getDatosID(string id, Mount mount, string *path, int *part_starParticion, int *part_size, string *part_name, int * error);
+    void getDatosID(QString id, Mount mount, string *path, int *part_starParticion, int *part_sizeParticion, string *part_nameParticion, int * error);
     string getFecha();
 };
 
