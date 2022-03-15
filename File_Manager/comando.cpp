@@ -576,6 +576,8 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
         break;
     case MKFS:
     {   // ********************** C O M A N D O   M K F S *************************
+        // Obligatorio: id
+        // Opcionales: type, fs
         if (this->id_flag == 0) {
             cout<<"Error. Parametro ID no establecido"<<endl;
             return;
@@ -607,8 +609,13 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
             this->fs_flag = 1;
         }
 
-        Mkfs sistema_archivos;
-        sistema_archivos.Ejecutar(this->id_valor, this->type_valor, this->fs_valor, this->montaje);
+        if (this->id_valor.startsWith("64")) {
+            Mkfs sistema_archivos;
+            sistema_archivos.Ejecutar(this->id_valor.toLower(), this->type_valor, this->fs_valor, this->montaje);
+        }else {
+            cout<<"Error. El ID no cumple con la estructura requerida"<<endl;
+            return;
+        }
     }
         break;
     case MKFILE:

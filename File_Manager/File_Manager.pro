@@ -49,4 +49,5 @@ HEADERS += \
     carpeta.h \
     recovery.h \
     rep.h \
-    exec.h
+    exec.h \
+    structs.h

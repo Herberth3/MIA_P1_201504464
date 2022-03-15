@@ -145,7 +145,7 @@ PARAMETERS
     | s_menos r_name s_igual identificador { $$ = new Parametro($2, $4); listParam.append($$); }
     | s_menos r_name s_igual cadena_string { $$ = new Parametro($2, $4); listParam.append($$); }
     | s_menos r_add s_igual numero_real { $$ = new Parametro($2, $4); listParam.append($$); }
-    | s_menos r_id s_igual identificador { $$ = new Parametro($2, $4); listParam.append($$); }
+    | s_menos r_id s_igual id_mount { $$ = new Parametro($2, $4); listParam.append($$); }
     | s_menos r_fs s_igual id_fs { $$ = new Parametro($2, $4); listParam.append($$); }
     | s_menos r_p { $$ = new Parametro($2, ""); listParam.append($$); }
     | s_menos r_cont s_igual cadena_string { $$ = new Parametro($2, $4); listParam.append($$); }
