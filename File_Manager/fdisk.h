@@ -27,7 +27,7 @@ private:
     void Crear_Particion(int size, QString unit, QString name, QString path, QString fit, QString type);
     void Crear_Logica(Partition particion, QString path);
     void show_Particiones(QString path);
-
+    bool existeParticion(QString path, QString name);
 };
 
 #endif // FDISK_H

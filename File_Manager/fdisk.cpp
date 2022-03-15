@@ -242,6 +242,11 @@ void Fdisk::Eliminar_Particion(QString t_delete, QString path, QString name)
 
 void Fdisk::Crear_Particion(int size, QString unit, QString name, QString path, QString fit, QString type)
 {
+    if (this->existeParticion(path, name)) {
+        cout << "Error: Ya existe una particion con este nombre"<<endl;
+        return;
+    }
+
     // Estructura tipo Particion, en la cual se llevara a cabo la creacion
     Partition nueva_particion;
     int tamanoParticion = size;
@@ -601,4 +606,46 @@ void Fdisk::show_Particiones(QString path)
     }else{
         cout << "No se pueden mostrar las particiones por path incorrecto.";
     }
+}
+
+bool Fdisk::existeParticion(QString path, QString name)
+{
+    int pos_extendida = -1;
+    FILE *disco_actual;
+
+    if((disco_actual = fopen(path.toStdString().c_str(), "rb+"))){
+
+        MBR masterboot;
+        fseek(disco_actual, 0, SEEK_SET);
+        fread(&masterboot, sizeof(MBR), 1, disco_actual);
+
+        for(int i = 0; i < 4; i++){
+
+            if(strcmp(masterboot.mbr_partition[i].part_name, name.toStdString().c_str()) == 0){
+                fclose(disco_actual);
+                return true;
+            }else if(masterboot.mbr_partition[i].part_type == 'E'){
+                pos_extendida = i;
+            }
+        }
+        if(pos_extendida != -1){
+
+            fseek(disco_actual, masterboot.mbr_partition[pos_extendida].part_start, SEEK_SET);
+
+            EBR extendedBoot;
+
+            while((fread(&extendedBoot, sizeof(EBR), 1, disco_actual)) != 0 && (ftell(disco_actual) < (masterboot.mbr_partition[pos_extendida].part_size + masterboot.mbr_partition[pos_extendida].part_start))){
+                if(strcmp(extendedBoot.part_name, name.toStdString().c_str()) == 0){
+                    fclose(disco_actual);
+                    return true;
+                }
+                if(extendedBoot.part_next == -1){
+                    fclose(disco_actual);
+                    return false;
+                }
+            }
+        }
+    }
+    fclose(disco_actual);
+    return false;
 }
