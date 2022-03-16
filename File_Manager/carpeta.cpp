@@ -61,7 +61,7 @@ void carpeta::mkDir(QString path, int p, QString id, Mount mount, bool is_bitaco
     }else{ // LA CARPETA SE CREA EN UN DIRECTORIO DIFERENTE A RAIZ
 
         vector<string> array_directorios;
-        stringstream total_path(path);
+        stringstream total_path(path.toStdString());
         string dir_tmp;
 
         // Se fragmenta (split, "/") el path en directorios y se enlistan en el vector
@@ -87,7 +87,7 @@ void carpeta::mkDir(QString path, int p, QString id, Mount mount, bool is_bitaco
         string fechaActual = this->getFecha();
 
         Structs::logBitacora bitacora;
-        strcpy(bitacora.path, path.c_str());
+        strcpy(bitacora.path, path.toStdString().c_str());
         bitacora.tipo = '0';
         strcpy(bitacora.tipo_operacion, "mkdir");
         bitacora.size = p;

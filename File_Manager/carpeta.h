@@ -4,6 +4,7 @@
 #include "mkfs.h"
 #include "structs.h"
 #include <vector>
+#include <sstream>
 
 class carpeta
 {
