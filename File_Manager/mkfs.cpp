@@ -154,8 +154,8 @@ void Mkfs::Ejecutar(QString id, QString type, QString fs, Mount mount)
     fclose(disco_actual);
 
     // Crear carpeta Raiz
-    //carpeta folder;
-    //folder.makeDirectory("/", 0, this->identificador, this->montaje, false);
+    carpeta folder;
+    folder.mkDir("/", 0, this->identificador, this->montaje, false);
 }
 
 void Mkfs::getDatosID(QString id, Mount mount, string *path, int *part_starParticion, int *part_sizeParticion, string *part_nameParticion, int *error)
