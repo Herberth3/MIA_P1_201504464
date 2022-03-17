@@ -676,9 +676,10 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
         break;
     case PAUSE:
     {   // ********************** C O M A N D O   P A U S E *************************
-        cout << "Comando pause: Ingresa un texto para continuar..." << endl;
-        string respuesta;
-        cin >> respuesta;
+        cout << "PAUSE: Presione ENTER para continuar..." << endl;
+        //string respuesta;
+        //cin >> respuesta;
+        cin.get();
     }
         break;
     case EXEC:
