@@ -12,6 +12,7 @@
 #include "archivo.h"
 #include "carpeta.h"
 #include "exec.h"
+#include "recovery.h"
 
 using namespace std;
 

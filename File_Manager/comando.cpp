@@ -19,7 +19,8 @@ enum COMANDO
     PAUSE = 10,
     EXEC = 11,
     LOGIN = 12,
-    RENAME = 13
+    RENAME = 13,
+    RECOVERY = 14
 };
 
 enum PARAMETRO
@@ -454,9 +455,9 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
                     cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
                     return;
                 }
-            } else if (ID_param == ID) {
-                if(this->id_flag == 0){
-                    this->id_valor = valor_param;
+            } else if (ID_param == ID) { // NOTA: El comando COPY solo pide PATH y DESTINO
+                if(this->id_flag == 0){ // Se pide el parametro ID para quemar el dato, se ignora al tener el LOGIN
+                    this->id_valor = valor_param; // QUITAR ID CUANDO SE HAGA LO DE LOGIN
                     this->id_flag = 1;
                 } else {
                     cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
@@ -480,6 +481,22 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
                 }
             }else {
                 cout<<"Error. Parametro no permitido en EXEC: "<<nombre_param.toStdString()<<endl;
+                return;
+            }
+        }
+            break;
+        case RECOVERY:
+        {   // ********************** C O M A N D O   R E C O V E R Y *************************
+            if (ID_param == ID) {
+                if(this->id_flag == 0){
+                    this->id_valor = valor_param;
+                    this->id_flag = 1;
+                } else {
+                    cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
+                    return;
+                }
+            }else {
+                cout<<"Error. Parametro no permitido en RECOVERY: "<<nombre_param.toStdString()<<endl;
                 return;
             }
         }
@@ -830,9 +847,15 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
     }
         break;
     case EXEC:
-    {   // ********************** C O M A N D O   R M D I S K *************************
+    {   // ********************** C O M A N D O   E X E C *************************
         Exec *script = new Exec(this->path_valor);
         script->Ejecutar();
+    }
+        break;
+    case RECOVERY:
+    {   // ********************** C O M A N D O   R E C O V E R Y *************************
+        Recovery recoveryFS;
+        recoveryFS.Ejecutar(this->id_valor.toLower(), this->montaje);
     }
         break;
     default:
@@ -856,6 +879,7 @@ int Comando::getComandoID(QString comando)
     if(comando == "exec") return 11;
     if(comando == "login") return 12;
     if(comando == "rename") return 13;
+    if(comando == "recovery") return 14;
 }
 
 int Comando::getParametroID(QString parametro)

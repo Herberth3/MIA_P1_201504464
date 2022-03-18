@@ -58,6 +58,7 @@ DIRECTORIO_GEN      ([\/]{IDENTIFICADOR})+([\.]{IDENTIFICADOR})?
 "COPY"             { strcpy(yylval.TEXT, yytext); return r_copy; }
 "PAUSE"             { strcpy(yylval.TEXT, yytext); return r_pause; }
 "EXEC"             { strcpy(yylval.TEXT, yytext); return r_exec; }
+"RECOVERY"             { strcpy(yylval.TEXT, yytext); return r_recovery; }
 "SIZE"              { strcpy(yylval.TEXT, yytext); return r_size; }
 "UNIT"                 { strcpy(yylval.TEXT, yytext); return r_unit; }
 "FIT"                 { strcpy(yylval.TEXT, yytext); return r_fit; }
