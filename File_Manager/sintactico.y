@@ -55,6 +55,7 @@ class Comando * comand;
 %token<TEXT> r_pause;
 %token<TEXT> r_exec;
 %token<TEXT> r_recovery;
+%token<TEXT> r_loss;
 %token<TEXT> r_size;
 %token<TEXT> r_unit;
 %token<TEXT> r_fit;
@@ -138,6 +139,7 @@ COMMAND
     | r_exec s_menos r_path s_igual cadena_string      { Parametro *nuevo = new Parametro($3, $5); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_rename LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_recovery s_menos r_id s_igual id_mount      { Parametro *nuevo = new Parametro($3, $5); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
+    | r_loss s_menos r_id s_igual id_mount      { Parametro *nuevo = new Parametro($3, $5); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
 ;
 
 LIST_PARAMETERS

@@ -13,6 +13,7 @@
 #include "carpeta.h"
 #include "exec.h"
 #include "recovery.h"
+#include "loss.h"
 
 using namespace std;
 

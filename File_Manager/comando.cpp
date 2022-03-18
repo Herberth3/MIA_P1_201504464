@@ -20,7 +20,8 @@ enum COMANDO
     EXEC = 11,
     LOGIN = 12,
     RENAME = 13,
-    RECOVERY = 14
+    RECOVERY = 14,
+    LOSS = 15
 };
 
 enum PARAMETRO
@@ -501,6 +502,22 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
             }
         }
             break;
+        case LOSS:
+        {   // ********************** C O M A N D O   L O S S *************************
+            if (ID_param == ID) {
+                if(this->id_flag == 0){
+                    this->id_valor = valor_param;
+                    this->id_flag = 1;
+                } else {
+                    cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
+                    return;
+                }
+            }else {
+                cout<<"Error. Parametro no permitido en LOSS: "<<nombre_param.toStdString()<<endl;
+                return;
+            }
+        }
+            break;
         default:
             cout<<"Comando no encontrado"<<endl;
             return;
@@ -858,6 +875,12 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
         recoveryFS.Ejecutar(this->id_valor.toLower(), this->montaje);
     }
         break;
+    case LOSS:
+    {   // ********************** C O M A N D O   L O S S *************************
+        Loss simulateLoss;
+        simulateLoss.Ejecutar(this->id_valor.toLower(), this->montaje);
+    }
+        break;
     default:
         break;
     }
@@ -880,6 +903,7 @@ int Comando::getComandoID(QString comando)
     if(comando == "login") return 12;
     if(comando == "rename") return 13;
     if(comando == "recovery") return 14;
+    if(comando == "loss") return 15;
 }
 
 int Comando::getParametroID(QString parametro)

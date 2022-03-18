@@ -30,7 +30,8 @@ SOURCES += main.cpp \
     recovery.cpp \
     rep.cpp \
     exec.cpp \
-    login.cpp
+    login.cpp \
+    loss.cpp
 
 HEADERS += \
     sintactico.y \
@@ -52,4 +53,5 @@ HEADERS += \
     rep.h \
     exec.h \
     structs.h \
-    login.h
+    login.h \
+    loss.h
