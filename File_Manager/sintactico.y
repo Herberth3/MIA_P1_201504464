@@ -51,7 +51,7 @@ class Comando * comand;
 %token<TEXT> r_mkfile;
 %token<TEXT> r_mkdir;
 %token<TEXT> r_rename;
-%token<TEXT> r_cp;
+%token<TEXT> r_copy;
 %token<TEXT> r_pause;
 %token<TEXT> r_exec;
 %token<TEXT> r_size;
@@ -69,7 +69,7 @@ class Comando * comand;
 %token<TEXT> r_p;
 %token<TEXT> r_r;
 %token<TEXT> r_cont;
-%token<TEXT> r_dest;
+%token<TEXT> r_destino;
 %token<TEXT> punto;
 %token<TEXT> punto_y_coma;
 %token<TEXT> dos_puntos;
@@ -131,7 +131,7 @@ COMMAND
     | r_login LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_mkfile LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_mkdir LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
-    | r_cp LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
+    | r_copy LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_pause      { comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_exec s_menos r_path s_igual directorio_exec      { Parametro *nuevo = new Parametro($3, $5); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_exec s_menos r_path s_igual cadena_string      { Parametro *nuevo = new Parametro($3, $5); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
@@ -165,6 +165,6 @@ PARAMETERS
     | s_menos r_r { $$ = new Parametro($2, ""); listParam.append($$); }
     | s_menos r_cont s_igual cadena_string { $$ = new Parametro($2, $4); listParam.append($$); }
     | s_menos r_cont s_igual directorio_gen { $$ = new Parametro($2, $4); listParam.append($$); }
-    | s_menos r_dest s_igual cadena_string { $$ = new Parametro($2, $4); listParam.append($$); }
-    | s_menos r_dest s_igual directorio { $$ = new Parametro($2, $4); listParam.append($$); }
+    | s_menos r_destino s_igual cadena_string { $$ = new Parametro($2, $4); listParam.append($$); }
+    | s_menos r_destino s_igual directorio_gen { $$ = new Parametro($2, $4); listParam.append($$); }
 ;

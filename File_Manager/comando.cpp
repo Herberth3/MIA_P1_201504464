@@ -15,7 +15,7 @@ enum COMANDO
     MKFS = 6,
     MKFILE = 7,
     MKDIR = 8,
-    CP = 9,
+    COPY = 9,
     PAUSE = 10,
     EXEC = 11,
     LOGIN = 12,
@@ -36,7 +36,7 @@ enum PARAMETRO
     FS = 10,
     P = 11,
     CONT = 12,
-    DEST = 13,
+    DESTINO = 13,
     USUARIO = 14,
     PASSWORD = 15,
     R = 16
@@ -59,6 +59,8 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
     this->fs_valor = "";
     this->usuario_valor = "";
     this->password_valor = "";
+    this->cont_valor = "";
+    this->destino_valor = "";
 
     this->size_flag = 0;
     this->unit_flag = 0;
@@ -73,6 +75,9 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
     this->usuario_flag = 0;
     this->password_flag = 0;
     this->p_flag = 0;
+    this->r_flag = 0;
+    this->cont_flag = 0;
+    this->destino_flag = 0;
 
     for(int i = 0; i<this->parametros.size(); i++){
         int ID_param = this->getParametroID(this->parametros[i]->getNombre());
@@ -431,7 +436,7 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
 
         }
             break;
-        case CP:
+        case COPY:
         {   // ********************** C O M A N D O   C P *************************
             if (ID_param == PATH) {
                 if(this->path_flag == 0){
@@ -441,10 +446,10 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
                     cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
                     return;
                 }
-            } else if (ID_param == DEST) {
-                if(this->dest_flag == 0){
-                    this->dest_valor = 1;
-                    this->dest_flag = 1;
+            } else if (ID_param == DESTINO) {
+                if(this->destino_flag == 0){
+                    this->destino_valor = valor_param;
+                    this->destino_flag = 1;
                 } else {
                     cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
                     return;
@@ -458,7 +463,7 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
                     return;
                 }
             } else {
-                cout<<"Error. Parametro no permitido en CP: "<<nombre_param.toStdString()<<endl;
+                cout<<"Error. Parametro no permitido en COPY: "<<nombre_param.toStdString()<<endl;
                 return;
             }
         }
@@ -496,6 +501,10 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
     // Si el cont viene con " se le remueven
     if (this->cont_valor.startsWith("\"")) {
         this->cont_valor.replace("\"", "");
+    }
+    // Si el destino viene con " se le remueven
+    if (this->destino_valor.startsWith("\"")) {
+        this->destino_valor.replace("\"", "");
     }
     // Si el usuario viene con " se le remueven
     if (this->usuario_valor.startsWith("\"")) {
@@ -790,20 +799,26 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
 
     }
         break;
-    case CP:
+    case COPY:
     {   // ********************** C O M A N D O   C P *************************
         if (this->path_flag == 0) {
             cout<<"Error. Parametro Path no establecido"<<endl;
             return;
         }
 
-        if (this->dest_flag == 0) {
-            cout<<"Error. Parametro Dest no establecido"<<endl;
+        if (this->destino_flag == 0) {
+            cout<<"Error. Parametro Destino no establecido"<<endl;
             return;
         }
 
-        //carpeta directorio;
-        //directorio.copyFile(this->path_valor.toStdString(), this->dest_valor.toStdString(), this->montaje, this->id_valor.toStdString());
+        // Quitar al tener en marcha LOGIN
+        if (this->id_flag == 0) {
+            cout<<"Error. Al no tener LOGIN se necesita ID para ejecutar el comando"<<endl;
+            return;
+        }
+
+        carpeta directorio;
+        directorio.copyFile(this->path_valor, this->destino_valor, this->montaje, this->id_valor.toLower());
     }
         break;
     case PAUSE:
@@ -836,7 +851,7 @@ int Comando::getComandoID(QString comando)
     if(comando == "mkfs") return 6;
     if(comando == "mkfile") return 7;
     if(comando == "mkdir") return 8;
-    if(comando == "cp") return 9;
+    if(comando == "copy") return 9;
     if(comando == "pause") return 10;
     if(comando == "exec") return 11;
     if(comando == "login") return 12;
@@ -857,7 +872,7 @@ int Comando::getParametroID(QString parametro)
     if(parametro.toLower() == "fs") return 10;
     if(parametro.toLower() == "p") return 11;
     if(parametro.toLower() == "cont") return 12;
-    if(parametro.toLower() == "dest") return 13;
+    if(parametro.toLower() == "destino") return 13;
     if(parametro.toLower() == "usuario") return 14;
     if(parametro.toLower() == "password") return 15;
     if(parametro.toLower() == "r") return 16;

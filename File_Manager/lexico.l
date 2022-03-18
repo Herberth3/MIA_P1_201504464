@@ -38,7 +38,7 @@ DELIMITADOR             [\t\r\f" "]
 DIRECTORIO              ([\/]{IDENTIFICADOR})+[\.][d][k]
 DIRECTORIO_EXEC    ([\/]{IDENTIFICADOR})+[\.][s][c][r][i][p][t]
 PASSWORD_L                ({LETRA}|{NUMERO})+
-DIRECTORIO_GEN      ([\/]{IDENTIFICADOR})+[\.]{IDENTIFICADOR}
+DIRECTORIO_GEN      ([\/]{IDENTIFICADOR})+([\.]{IDENTIFICADOR})?
 
 %x COM
 
@@ -55,7 +55,7 @@ DIRECTORIO_GEN      ([\/]{IDENTIFICADOR})+[\.]{IDENTIFICADOR}
 "MKFILE"             { strcpy(yylval.TEXT, yytext); return r_mkfile; }
 "MKDIR"             { strcpy(yylval.TEXT, yytext); return r_mkdir; }
 "RENAME"             { strcpy(yylval.TEXT, yytext); return r_rename; }
-"CP"             { strcpy(yylval.TEXT, yytext); return r_cp; }
+"COPY"             { strcpy(yylval.TEXT, yytext); return r_copy; }
 "PAUSE"             { strcpy(yylval.TEXT, yytext); return r_pause; }
 "EXEC"             { strcpy(yylval.TEXT, yytext); return r_exec; }
 "SIZE"              { strcpy(yylval.TEXT, yytext); return r_size; }
@@ -73,7 +73,7 @@ DIRECTORIO_GEN      ([\/]{IDENTIFICADOR})+[\.]{IDENTIFICADOR}
 "P"          { strcpy(yylval.TEXT, yytext); return r_p; }
 "R"          { strcpy(yylval.TEXT, yytext); return r_r; }
 "CONT"          { strcpy(yylval.TEXT, yytext); return r_cont; }
-"DEST"          { strcpy(yylval.TEXT, yytext); return r_dest; }
+"DESTINO"          { strcpy(yylval.TEXT, yytext); return r_destino; }
 
 
 {NUMERO_ENTERO}     { strcpy(yylval.TEXT, yytext); return numero_entero; }

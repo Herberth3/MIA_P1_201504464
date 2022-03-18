@@ -488,3 +488,264 @@ void carpeta::recorrerRuta(Structs::arbolVirtual avd, vector<string> array_direc
     this->recorrerRuta(carpetaIndirecta, array_directorios, pathDisco, superBloque, nombre, apuntador);
     return;
 }
+
+void carpeta::copyFile(QString path, QString dest, Mount montaje, QString id)
+{
+    int sizeParticion;
+    int startParticion;
+    int error = 0;
+    string pathDisco_Particion= "";
+    string nombreParticion;
+
+    this->getDatosParticionMontada(id, montaje, &pathDisco_Particion, &startParticion, &sizeParticion, &nombreParticion, &error);
+
+    if(error == 1){
+        return;
+    }
+
+    vector<string> array_directorios;
+    stringstream total_path(path.toStdString());
+    string dir_tmp;
+
+    while (getline(total_path, dir_tmp, '/'))
+    {
+        if(dir_tmp != ""){
+            array_directorios.push_back(dir_tmp);
+        }
+    }
+
+    vector<string> destinoArray;
+    stringstream total_path2(dest.toStdString());
+    string dir_tmp2;
+
+    while (getline(total_path2, dir_tmp2, '/'))
+    {
+        if(dir_tmp2 != ""){
+            destinoArray.push_back(dir_tmp2);
+        }
+    }
+
+    Structs::SuperBloque superBloque;
+
+    FILE *disco_actual = fopen(pathDisco_Particion.c_str(), "rb+");
+    fseek(disco_actual, startParticion, SEEK_SET);
+    // Leo el superbloque al inicio de la particion
+    fread(&superBloque, sizeof(Structs::SuperBloque), 1, disco_actual);
+
+    Structs::arbolVirtual carpeta_raiz;
+    fseek(disco_actual, superBloque.start_arbol_directorio, SEEK_SET);
+    fread(&carpeta_raiz, sizeof(Structs::arbolVirtual), 1, disco_actual);
+
+    fclose(disco_actual);
+
+    Structs::arbolVirtual avdDest = getAVD(carpeta_raiz, destinoArray, pathDisco_Particion, superBloque, 0);
+    int avdDestNo = getintAVD(carpeta_raiz, destinoArray, pathDisco_Particion, superBloque, 0);
+    int avdRuta = getintAVD(carpeta_raiz, array_directorios, pathDisco_Particion, superBloque, 0);
+
+    FILE *disco_actual1 = fopen(pathDisco_Particion.c_str(), "rb+");
+
+    if(this->copiarArchivo){
+
+        int apuntador = avdDest.detalle_directorio;
+        Structs::detalleDirectorio Archivos;
+        // Nos posicionamos en el detalle de directorio
+        fseek(disco_actual1, (superBloque.start_detalle_directorio + (apuntador * sizeof(Structs::detalleDirectorio))), SEEK_SET);
+        fread(&Archivos, sizeof(Structs::detalleDirectorio), 1, disco_actual1);
+
+        for(int j=0;j<5;j++){
+
+            if(Archivos.archivos[j].noInodo == -1){
+
+                Archivos.archivos[j].noInodo = avdRuta;
+                // Nos posicionamos en el detalle de directorio.
+                fseek(disco_actual1, (superBloque.start_detalle_directorio + (apuntador * sizeof(Structs::detalleDirectorio))), SEEK_SET);
+                fwrite(&Archivos, sizeof(Structs::detalleDirectorio), 1, disco_actual1);
+                this->copiarArchivo = false;
+                break;
+            }
+        }
+    }else{
+
+        for(int j = 0; j < 6; j++){
+
+            if(avdDest.array_subdirectorios[j] == -1){
+
+                avdDest.array_subdirectorios[j] = avdRuta;
+                fseek(disco_actual1, superBloque.start_arbol_directorio + (avdDestNo * sizeof(Structs::arbolVirtual)), SEEK_SET);
+                fwrite(&avdDest, sizeof(Structs::arbolVirtual), 1, disco_actual1);
+                break;
+            }
+        }
+    }
+    fclose(disco_actual1);
+}
+
+Structs::arbolVirtual carpeta::getAVD(Structs::arbolVirtual avd, vector<string> path, string pathDisco, Structs::SuperBloque superBloque, int pointer)
+{
+    bool esArchivo = false;
+    FILE *disco_actual = fopen(pathDisco.c_str(), "rb+");
+    int apuntador = 0;
+
+    for(int i = 0; i < 6; i++){
+
+        apuntador = avd.array_subdirectorios[i];
+        Structs::arbolVirtual carpetaHijo;
+        // Nos posicionamos en la carpeta hija
+        fseek(disco_actual, (superBloque.start_arbol_directorio + (apuntador * sizeof(Structs::arbolVirtual))), SEEK_SET);
+        fread(&carpetaHijo, sizeof(Structs::arbolVirtual), 1, disco_actual);
+
+        if(carpetaHijo.nombre_directorio == path[0]){
+            string name = path[0];
+            path.erase(path.begin());
+            // O es archivo o es carpeta
+            if(path.size() == 1){
+
+                apuntador = carpetaHijo.detalle_directorio;
+                Structs::detalleDirectorio Archivos;
+                //nos posicionamos en el detalle de directorio
+                fseek(disco_actual, (superBloque.start_detalle_directorio + (apuntador * sizeof(Structs::detalleDirectorio))), SEEK_SET);
+                fread(&Archivos, sizeof(Structs::detalleDirectorio), 1, disco_actual);
+
+                for(int j = 0; j < 5; j++){
+
+                    if(Archivos.archivos[j].nombre_directorio == path[0]){
+                        cout<< "Archivo Encontrado"<< endl;
+                        this->copiarArchivo = true;
+                        fclose(disco_actual);
+                        return carpetaHijo;
+                    }
+                }
+
+                //ES CARPETA.
+                if(!esArchivo){
+
+                    for(int k = 0; k < 6; k++){
+
+                        int pointer = carpetaHijo.array_subdirectorios[k];
+                        Structs::arbolVirtual carpeta;
+                        // Nos posicionamos en la carpeta hija
+                        fseek(disco_actual, (superBloque.start_arbol_directorio + (pointer * sizeof(Structs::arbolVirtual))), SEEK_SET);
+                        fread(&carpeta, sizeof(Structs::arbolVirtual), 1, disco_actual);
+
+                        if(carpeta.nombre_directorio == path[0]){
+                            cout<< "Carpeta Encontrada"<< endl;
+                            fclose(disco_actual);
+                            return carpeta;
+                        }
+                    }
+                }
+                cout<< "Archivo No encontrado"<< endl;
+                fclose(disco_actual);
+                return avd;
+            }else if(path.size() == 0){
+
+                if(carpetaHijo.nombre_directorio == name){
+                    cout<< "Carpeta Encontrada"<< endl;
+                    fclose(disco_actual);
+                    return carpetaHijo;
+                }else{
+                    this->copiarArchivo = true;
+                    fclose(disco_actual);
+                    return avd;
+                }
+         }else{
+                fclose(disco_actual);
+
+                return this->getAVD(carpetaHijo, path, pathDisco, superBloque, apuntador);            }
+        }
+    }
+
+    // NINGUNO CUMPLE, SE MUEVE AL APUNTADOR INDIRECTO
+    apuntador = avd.avd_siguiente;
+    Structs::arbolVirtual carpetaIndirecta;
+    // Nos posicionamos en la carpeta hija
+    fseek(disco_actual, (superBloque.start_arbol_directorio + (apuntador * sizeof(Structs::arbolVirtual))), SEEK_SET);
+    fread(&carpetaIndirecta, sizeof(Structs::arbolVirtual), 1, disco_actual);
+
+    fclose(disco_actual);
+    return this->getAVD(carpetaIndirecta, path, pathDisco, superBloque, apuntador);
+}
+
+int carpeta::getintAVD(Structs::arbolVirtual avd, vector<string> path, string pathDisco, Structs::SuperBloque superBloque, int pointer)
+{
+    bool esArchivo = false;
+    FILE *disco_actual = fopen(pathDisco.c_str(), "rb+");
+    int apuntador = 0;
+
+    for(int i = 0; i < 6; i++){
+
+        apuntador = avd.array_subdirectorios[i];
+        Structs::arbolVirtual carpetaHijo;
+        // Nos posicionamos en la carpeta hija
+        fseek(disco_actual, (superBloque.start_arbol_directorio + (apuntador * sizeof(Structs::arbolVirtual))), SEEK_SET);
+        fread(&carpetaHijo, sizeof(Structs::arbolVirtual), 1, disco_actual);
+
+        if(carpetaHijo.nombre_directorio == path[0]){
+            string name = path[0];
+            path.erase(path.begin());
+            if(path.size() == 1){ // O es archivo o es carpeta.
+                apuntador = carpetaHijo.detalle_directorio;
+                Structs::detalleDirectorio Archivos;
+                // Nos posicionamos en el detalle de directorio
+                fseek(disco_actual, (superBloque.start_detalle_directorio+(apuntador*sizeof(Structs::detalleDirectorio))), SEEK_SET);
+                fread(&Archivos, sizeof(Structs::detalleDirectorio), 1, disco_actual);
+
+                for(int j=0; j < 5; j++){
+
+                    if(Archivos.archivos[j].nombre_directorio == path[0]){
+                        cout<< "Archivo Encontrado"<< endl;
+                        this->copiarArchivo = true;
+                        fclose(disco_actual);
+                        return Archivos.archivos[j].noInodo;
+                    }
+                }
+
+                //ES CARPETA.
+                if(!esArchivo){
+
+                    for(int k = 0; k < 6; k++){
+
+                        int pointer = carpetaHijo.array_subdirectorios[k];
+                        Structs::arbolVirtual carpeta;
+                        // Nos posicionamos en la carpeta hija
+                        fseek(disco_actual, (superBloque.start_arbol_directorio+(pointer*sizeof(Structs::arbolVirtual))), SEEK_SET);
+                        fread(&carpeta, sizeof(Structs::arbolVirtual), 1, disco_actual);
+                        fclose(disco_actual);
+
+                        if(carpeta.nombre_directorio == path[0]){
+                            cout<< "Carpeta Encontrada"<< endl;
+                            return pointer;
+                        }
+                    }
+                }
+                cout<< "Archivo No encontrado"<< endl;
+                fclose(disco_actual);
+                return pointer;
+            }else if(path.size() == 0){
+
+                if(carpetaHijo.nombre_directorio == name){
+                    cout<< "Carpeta Encontrada"<< endl;
+                    fclose(disco_actual);
+                    return apuntador;
+                }else{
+                    this->copiarArchivo = true;
+                    fclose(disco_actual);
+                    return pointer;
+                }
+         }else{
+                fclose(disco_actual);
+                return this->getintAVD(carpetaHijo, path, pathDisco, superBloque, apuntador);
+            }
+        }
+    }
+
+    // NINGUNO CUMPLE, SE MUEVE AL APUNTADOR INDIRECTO
+    apuntador = avd.avd_siguiente;
+    Structs::arbolVirtual carpetaIndirecta;
+    // Nos posicionamos en la carpeta hija
+    fseek(disco_actual, (superBloque.start_arbol_directorio + (apuntador * sizeof(Structs::arbolVirtual))), SEEK_SET);
+    fread(&carpetaIndirecta, sizeof(Structs::arbolVirtual), 1, disco_actual);
+
+    fclose(disco_actual);
+    return this->getintAVD(carpetaIndirecta, path, pathDisco, superBloque, apuntador);
+}

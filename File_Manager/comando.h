@@ -38,7 +38,7 @@ private:
     QString usuario_valor;
     QString password_valor;
     QString cont_valor;
-    QString dest_valor;
+    QString destino_valor;
 
     int size_flag;
     int unit_flag;
@@ -55,7 +55,7 @@ private:
     int p_flag;
     int r_flag;
     int cont_flag;
-    int dest_flag;
+    int destino_flag;
 
     // VARIABLES GLOBALES
     // Instancia unica de MOUNT para manejar la estructura encargada de tener
