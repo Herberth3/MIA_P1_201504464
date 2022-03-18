@@ -9,7 +9,7 @@ void Mkfs::Ejecutar(QString id, QString type, QString fs, Mount mount)
 {
     this->identificador = id;
     this->tipo_formateo = type;
-    this->tipo_sistema = fs;
+    this->tipo_sistema = fs.toLower();
     this->montaje = mount;
 
     int num_Estructuras = -1;
@@ -156,6 +156,146 @@ void Mkfs::Ejecutar(QString id, QString type, QString fs, Mount mount)
     // Crear carpeta Raiz
     carpeta folder;
     folder.mkDir("/", 0, this->identificador, this->montaje, false);
+
+    /*
+    // Formula para el numero de estructuras
+    // EXT2 y EXT3
+    double n = (sizeParticion - static_cast<int>(sizeof(SuperBloque))) / (4 + static_cast<int>(sizeof(InodoTable)) + 3*static_cast<int>(sizeof(BloqueArchivo)));
+    int num_estructuras = static_cast<int>(floor(n));//Numero de inodos
+    int num_bloques = 3 * num_estructuras;
+    // EXT3
+    int super_size = static_cast<int>(sizeof(SuperBloque));
+    int journal_size = static_cast<int>(sizeof(Journal)) * num_estructuras;
+    string fechaActual = this->getFecha();
+
+    // EXT2 y EXT3 Inicializando el Super Bloque
+    SuperBloque superBloque;
+    superBloque.s_inodes_count = num_estructuras;
+    superBloque.s_blocks_count = num_bloques;
+    superBloque.s_free_blocks_count = num_bloques -2;
+    superBloque.s_free_inodes_count = num_estructuras -2;
+    strcpy(superBloque.s_mtime, fechaActual.c_str());
+    strcpy(superBloque.s_umtime, "");
+    superBloque.s_mnt_count = 0;
+    superBloque.s_magic = 0xEF53;
+    superBloque.s_inode_size = sizeof(InodoTable);
+    superBloque.s_block_size = sizeof(BloqueArchivo);
+    superBloque.s_first_ino = 2;
+    superBloque.s_first_blo = 2;
+    if (this->tipo_sistema == "2fs") {
+        // EXT2
+        superBloque.s_filesystem_type = 2;
+        superBloque.s_bm_inode_start = startParticion + static_cast<int>(sizeof(SuperBloque));
+        superBloque.s_bm_block_start = startParticion + static_cast<int>(sizeof(SuperBloque)) + num_estructuras;
+        superBloque.s_inode_start = startParticion + static_cast<int>(sizeof (SuperBloque)) + num_estructuras + num_bloques;
+        superBloque.s_block_start = startParticion + static_cast<int>(sizeof(SuperBloque)) + num_estructuras + num_bloques + (static_cast<int>(sizeof(InodoTable))*num_estructuras);
+    } else {
+        // EXT3
+        superBloque.s_filesystem_type = 3;
+        superBloque.s_bm_inode_start = startParticion + super_size + journal_size;
+        superBloque.s_bm_block_start = startParticion + super_size + journal_size + num_estructuras;
+        superBloque.s_inode_start = startParticion + super_size + journal_size + num_estructuras + num_bloques;
+        superBloque.s_block_start = startParticion + super_size + journal_size + num_estructuras + num_bloques + static_cast<int>(sizeof(InodoTable))*num_estructuras;
+    }
+
+    // EXT2 y EXT3
+    InodoTable inodo;
+    BloqueCarpeta bloque;
+
+    char buffer = '0';
+    char buffer2 = '1';
+    char buffer3 = '2';
+
+    FILE *disco_Actual = fopen(pathDisco_Particion.c_str(),"rb+");
+
+    //-------------------SUPERBLOQUE------------------
+    fseek(disco_Actual, startParticion, SEEK_SET);
+    fwrite(&superBloque, sizeof(SuperBloque), 1, disco_Actual);
+
+    //----------------BITMAP DE INODOS----------------
+    for(int i = 0; i < num_estructuras; i++){
+        fseek(disco_Actual, superBloque.s_bm_inode_start + i, SEEK_SET);
+        fwrite(&buffer, sizeof(char), 1, disco_Actual);
+    }
+    //----------bit para / y users.txt en BM----------
+    fseek(disco_Actual, superBloque.s_bm_inode_start, SEEK_SET);
+    fwrite(&buffer2, sizeof(char), 1, disco_Actual);
+    fwrite(&buffer2, sizeof(char), 1, disco_Actual);
+
+    //---------------BITMAP DE BLOQUES----------------
+    for(int i = 0; i < num_bloques; i++){
+        fseek(disco_Actual, superBloque.s_bm_block_start + i, SEEK_SET);
+        fwrite(&buffer, sizeof(char), 1, disco_Actual);
+    }
+    //----------bit para / y users.txt en BM----------
+    fseek(disco_Actual, superBloque.s_bm_block_start, SEEK_SET);
+    fwrite(&buffer2, sizeof(char), 1, disco_Actual);
+    fwrite(&buffer3, sizeof(char), 1, disco_Actual);
+
+    //------------inodo para carpeta root-------------
+    inodo.i_uid = 1;
+    inodo.i_gid = 1;
+    inodo.i_size = 0;
+    strcpy(inodo.i_atime, fechaActual.c_str());
+    strcpy(inodo.i_ctime, fechaActual.c_str());
+    strcpy(inodo.i_mtime, fechaActual.c_str());
+    inodo.i_block[0] = 0;
+    for(int i = 1; i < 15;i++)
+        inodo.i_block[i] = -1;
+    inodo.i_type = '0';
+    inodo.i_perm = 664;
+
+    fseek(disco_Actual, superBloque.s_inode_start, SEEK_SET);
+    fwrite(&inodo, sizeof(InodoTable), 1, disco_Actual);
+
+    //------------Bloque para carpeta root------------
+    strcpy(bloque.b_content[0].b_name, ".");//Actual (el mismo)
+    bloque.b_content[0].b_inodo = 0;
+
+    strcpy(bloque.b_content[1].b_name, "..");//Padre
+    bloque.b_content[1].b_inodo = 0;
+
+    strcpy(bloque.b_content[2].b_name, "users.txt");
+    bloque.b_content[2].b_inodo = 1;
+
+    strcpy(bloque.b_content[3].b_name, ".");
+    bloque.b_content[3].b_inodo = -1;
+
+    fseek(disco_Actual, superBloque.s_block_start, SEEK_SET);
+    fwrite(&bloque, sizeof(BloqueCarpeta), 1, disco_Actual);
+
+    //------------inodo para users.txt-------------
+    inodo.i_uid = 1;
+    inodo.i_gid = 1;
+    inodo.i_size = 27;
+    strcpy(inodo.i_atime, fechaActual.c_str());
+    strcpy(inodo.i_ctime, fechaActual.c_str());
+    strcpy(inodo.i_mtime, fechaActual.c_str());
+    inodo.i_block[0] = 1;
+    for(int i = 1; i < 15; i++){
+        inodo.i_block[i] = -1;
+    }
+    inodo.i_type = '1';
+    inodo.i_perm = 755;
+    fseek(disco_Actual, superBloque.s_inode_start + static_cast<int>(sizeof(InodoTable)), SEEK_SET);
+    fwrite(&inodo, sizeof(InodoTable), 1, disco_Actual);
+
+    //-------------Bloque para users.txt------------
+    BloqueArchivo archivo;
+    memset(archivo.b_content, 0, sizeof(archivo.b_content));
+    strcpy(archivo.b_content, "1,G,root\n1,U,root,root,123\n");
+    fseek(disco_Actual, superBloque.s_block_start + static_cast<int>(sizeof(BloqueCarpeta)), SEEK_SET);
+    fwrite(&archivo, sizeof(BloqueArchivo), 1, disco_Actual);
+
+    if (this->tipo_sistema == "2fs") {
+        cout << "EXT2" << endl;
+    } else {
+        cout << "EXT3" << endl;
+    }
+    cout << "..." << endl;
+    cout << "Disco formateado con exito" << endl;
+
+    fclose(disco_Actual);*/
 }
 
 void Mkfs::getDatosID(QString id, Mount mount, string *path, int *part_starParticion, int *part_sizeParticion, string *part_nameParticion, int *error)
@@ -194,6 +334,7 @@ void Mkfs::getDatosID(QString id, Mount mount, string *path, int *part_starParti
     if (!existePath)
     {
         cout << "Error: ID no reconocido o la particion no esta montada" << endl;
+        *error = 1;
         return;
     }
 

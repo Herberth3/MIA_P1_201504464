@@ -148,6 +148,7 @@ void carpeta::getDatosParticionMontada(QString id, Mount mount, string *path, in
     if (!existePath)
     {
         cout << "Error: ID no reconocido o la particion no esta montada" << endl;
+        *error = 1;
         return;
     }
 

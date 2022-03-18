@@ -29,7 +29,8 @@ SOURCES += main.cpp \
     carpeta.cpp \
     recovery.cpp \
     rep.cpp \
-    exec.cpp
+    exec.cpp \
+    login.cpp
 
 HEADERS += \
     sintactico.y \
@@ -50,4 +51,5 @@ HEADERS += \
     recovery.h \
     rep.h \
     exec.h \
-    structs.h
+    structs.h \
+    login.h

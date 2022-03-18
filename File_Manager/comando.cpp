@@ -17,7 +17,8 @@ enum COMANDO
     MKDIR = 8,
     CP = 9,
     PAUSE = 10,
-    EXEC = 11
+    EXEC = 11,
+    LOGIN = 12
 };
 
 enum PARAMETRO
@@ -34,7 +35,9 @@ enum PARAMETRO
     FS = 10,
     P = 11,
     CONT = 12,
-    DEST = 13
+    DEST = 13,
+    USUARIO = 14,
+    PASSWORD = 15
 };
 
 void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
@@ -52,6 +55,8 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
     this->name_valor = "";
     this->id_valor = "";
     this->fs_valor = "";
+    this->usuario_valor = "";
+    this->password_valor = "";
 
     this->size_flag = 0;
     this->unit_flag = 0;
@@ -63,6 +68,9 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
     this->add_flag = 0;
     this->id_flag = 0;
     this->fs_flag = 0;
+    this->usuario_flag = 0;
+    this->password_flag = 0;
+    this->p_flag = 0;
 
     for(int i = 0; i<this->parametros.size(); i++){
         int ID_param = this->getParametroID(this->parametros[i]->getNombre());
@@ -278,6 +286,38 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
             }
         }
             break;
+        case LOGIN:
+        {   // ********************** C O M A N D O   L O G I N *************************
+            if (ID_param == ID) {
+                if(this->id_flag == 0){
+                    this->id_valor = valor_param;
+                    this->id_flag = 1;
+                } else {
+                    cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
+                    return;
+                }
+            } else if (ID_param == USUARIO) {
+                if(this->usuario_flag == 0){
+                    this->usuario_valor = valor_param;
+                    this->usuario_flag = 1;
+                } else {
+                    cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
+                    return;
+                }
+            } else if (ID_param == PASSWORD) {
+                if(this->password_flag == 0){
+                    this->password_valor = valor_param;
+                    this->password_flag = 1;
+                } else {
+                    cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
+                    return;
+                }
+            } else {
+                cout<<"Error. Parametro no permitido en LOGIN: "<<nombre_param.toStdString()<<endl;
+                return;
+            }
+        }
+            break;
         case MKFILE:
         {   // ********************** C O M A N D O   M K F I L E *************************
             if (ID_param == PATH) {
@@ -290,7 +330,6 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
                 }
             } else if (ID_param == P) {
                 if(this->p_flag == 0){
-                    this->p_valor = 1;
                     this->p_flag = 1;
                 } else {
                     cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
@@ -344,9 +383,9 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
                     cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
                     return;
                 }
-            } else if (ID_param == ID) {
-                if(this->id_flag == 0){
-                    this->id_valor = valor_param;
+            } else if (ID_param == ID) { // NOTA: El comando MKDIR solo pide PATH y P
+                if(this->id_flag == 0){ // Se pide el parametro ID para quemar el dato, se ignora al tener el LOGIN
+                    this->id_valor = valor_param; // QUITAR ID CUANDO SE HAGA LO DE LOGIN
                     this->id_flag = 1;
                 } else {
                     cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
@@ -423,6 +462,14 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
     // Si el cont viene con " se le remueven
     if (this->cont_valor.startsWith("\"")) {
         this->cont_valor.replace("\"", "");
+    }
+    // Si el usuario viene con " se le remueven
+    if (this->usuario_valor.startsWith("\"")) {
+        this->usuario_valor.replace("\"", "");
+    }
+    // Si el password viene con " se le remueven
+    if (this->password_valor.startsWith("\"")) {
+        this->password_valor.replace("\"", "");
     }
 
     // Se hace match con el comando actual, se hacen algunas validaciones
@@ -618,6 +665,34 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
         }
     }
         break;
+    case LOGIN:
+    {   // ********************** C O M A N D O   L O G I N *************************
+        // Obligatorio: id, usuario, password
+        if (this->id_flag == 0) {
+            cout<<"Error. Parametro ID no establecido"<<endl;
+            return;
+        }
+
+        if (this->usuario_flag == 0) {
+            cout<<"Error. Parametro USUARIO no establecido"<<endl;
+            return;
+        }
+
+        if (this->password_flag == 0) {
+            cout<<"Error. Parametro PASSWORD no establecido"<<endl;
+            return;
+        }
+
+        if (this->id_valor.startsWith("64")) {
+            Login loguear;
+            loguear.Ejecutar(this->id_valor.toLower(), this->usuario_valor, this->password_valor, this->montaje, this->flag_login, this->currentSession);
+        }else {
+            cout<<"Error. El ID no cumple con la estructura requerida"<<endl;
+            return;
+        }
+
+    }
+        break;
     case MKFILE:
     {   // ********************** C O M A N D O   M K F I L E *************************
         if (this->path_flag == 0) {
@@ -648,14 +723,14 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
             return;
         }
 
-        if (this->p_flag == 0) {
-
-            this->p_valor = 1;
-            this->p_flag = 1;
+        // Quitar al tener en marcha LOGIN
+        if (this->id_flag == 0) {
+            cout<<"Error. Al no tener LOGIN se necesita ID para ejecutar el comando"<<endl;
+            return;
         }
 
-        //carpeta nueva_carpeta;
-        //nueva_carpeta.mkdir(this->path_valor, this->p_valor, this->id_valor, this->montaje, false);
+        carpeta nueva_carpeta;
+        nueva_carpeta.mkDir(this->path_valor, this->p_flag, this->id_valor.toLower(), this->montaje, false);
     }
         break;
     case CP:
@@ -707,6 +782,7 @@ int Comando::getComandoID(QString comando)
     if(comando == "cp") return 9;
     if(comando == "pause") return 10;
     if(comando == "exec") return 11;
+    if(comando == "login") return 12;
 }
 
 int Comando::getParametroID(QString parametro)
@@ -724,4 +800,6 @@ int Comando::getParametroID(QString parametro)
     if(parametro.toLower() == "p") return 11;
     if(parametro.toLower() == "cont") return 12;
     if(parametro.toLower() == "dest") return 13;
+    if(parametro.toLower() == "usuario") return 14;
+    if(parametro.toLower() == "password") return 15;
 }

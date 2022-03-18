@@ -47,6 +47,7 @@ class Comando * comand;
 %token<TEXT> r_mount;
 %token<TEXT> r_unmount;
 %token<TEXT> r_mkfs;
+%token<TEXT> r_login;
 %token<TEXT> r_mkfile;
 %token<TEXT> r_mkdir;
 %token<TEXT> r_cp;
@@ -62,6 +63,8 @@ class Comando * comand;
 %token<TEXT> r_add;
 %token<TEXT> r_id;
 %token<TEXT> r_fs;
+%token<TEXT> r_password;
+%token<TEXT> r_usuario;
 %token<TEXT> r_p;
 %token<TEXT> r_cont;
 %token<TEXT> r_dest;
@@ -94,6 +97,7 @@ class Comando * comand;
 %token<TEXT> id_fs;
 %token<TEXT> directorio;
 %token<TEXT> directorio_exec;
+%token<TEXT> password_l;
 
 
 %type <param> PARAMETERS; // lista de instrucciones
@@ -121,6 +125,7 @@ COMMAND
     | r_mount LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_unmount s_menos r_id s_igual id_mount      { Parametro *nuevo = new Parametro($3, $5); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_mkfs LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
+    | r_login LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_mkfile LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_mkdir LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_cp LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
@@ -147,6 +152,10 @@ PARAMETERS
     | s_menos r_add s_igual numero_real { $$ = new Parametro($2, $4); listParam.append($$); }
     | s_menos r_id s_igual id_mount { $$ = new Parametro($2, $4); listParam.append($$); }
     | s_menos r_fs s_igual id_fs { $$ = new Parametro($2, $4); listParam.append($$); }
+    | s_menos r_password s_igual password_l { $$ = new Parametro($2, $4); listParam.append($$); }
+    | s_menos r_password s_igual cadena_string { $$ = new Parametro($2, $4); listParam.append($$); }
+    | s_menos r_usuario s_igual identificador { $$ = new Parametro($2, $4); listParam.append($$); }
+    | s_menos r_usuario s_igual cadena_string { $$ = new Parametro($2, $4); listParam.append($$); }
     | s_menos r_p { $$ = new Parametro($2, ""); listParam.append($$); }
     | s_menos r_cont s_igual cadena_string { $$ = new Parametro($2, $4); listParam.append($$); }
     | s_menos r_cont s_igual directorio { $$ = new Parametro($2, $4); listParam.append($$); }

@@ -31,12 +31,13 @@ LETRAS               [a-zA-ZÑñáéíóúÁÉÍÓÚ]+
 LETRA               [a-zA-ZÑñáéíóúÁÉÍÓÚ]
 
 IDENTIFICADOR               {LETRAS}({LETRAS}|{NUMERO_ENTERO}|"_")*
-ID_MOUNT                        {NUMERO_ENTERO}{LETRA}
+ID_MOUNT                        [6][4]{NUMERO_ENTERO}{LETRA}
 ID_FS                               {NUMERO}[f][s]
 CADENA_STRING               [\"][^\"\n]*[\"\n]
 DELIMITADOR             [\t\r\f" "]
 DIRECTORIO              ([\/]{IDENTIFICADOR})+[\.][d][k]
 DIRECTORIO_EXEC    ([\/]{IDENTIFICADOR})+[\.][s][c][r][i][p][t]
+PASSWORD_L                ({LETRA}|{NUMERO})+
 
 %x COM
 
@@ -49,6 +50,7 @@ DIRECTORIO_EXEC    ([\/]{IDENTIFICADOR})+[\.][s][c][r][i][p][t]
 "MOUNT"             { strcpy(yylval.TEXT, yytext); return r_mount; }
 "UNMOUNT"             { strcpy(yylval.TEXT, yytext); return r_unmount; }
 "MKFS"             { strcpy(yylval.TEXT, yytext); return r_mkfs; }
+"LOGIN"             { strcpy(yylval.TEXT, yytext); return r_login; }
 "MKFILE"             { strcpy(yylval.TEXT, yytext); return r_mkfile; }
 "MKDIR"             { strcpy(yylval.TEXT, yytext); return r_mkdir; }
 "CP"             { strcpy(yylval.TEXT, yytext); return r_cp; }
@@ -64,6 +66,8 @@ DIRECTORIO_EXEC    ([\/]{IDENTIFICADOR})+[\.][s][c][r][i][p][t]
 "ADD"          { strcpy(yylval.TEXT, yytext); return r_add; }
 "ID"          { strcpy(yylval.TEXT, yytext); return r_id; }
 "FS"          { strcpy(yylval.TEXT, yytext); return r_fs; }
+"PASSWORD"             { strcpy(yylval.TEXT, yytext); return r_password; }
+"USUARIO"             { strcpy(yylval.TEXT, yytext); return r_usuario; }
 "P"          { strcpy(yylval.TEXT, yytext); return r_p; }
 "CONT"          { strcpy(yylval.TEXT, yytext); return r_cont; }
 "DEST"          { strcpy(yylval.TEXT, yytext); return r_dest; }
@@ -78,6 +82,7 @@ DIRECTORIO_EXEC    ([\/]{IDENTIFICADOR})+[\.][s][c][r][i][p][t]
 {DELIMITADOR}           {}
 {DIRECTORIO}                { strcpy(yylval.TEXT, yytext); return directorio; }
 {DIRECTORIO_EXEC}                { strcpy(yylval.TEXT, yytext); return directorio_exec; }
+{PASSWORD_L}                { strcpy(yylval.TEXT, yytext); return password_l; }
 
 
 "." { strcpy(yylval.TEXT, yytext); return punto; }
