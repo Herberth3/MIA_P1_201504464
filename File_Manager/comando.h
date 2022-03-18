@@ -53,6 +53,7 @@ private:
     int usuario_flag;
     int password_flag;
     int p_flag;
+    int r_flag;
     int cont_flag;
     int dest_flag;
 

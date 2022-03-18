@@ -37,7 +37,8 @@ enum PARAMETRO
     CONT = 12,
     DEST = 13,
     USUARIO = 14,
-    PASSWORD = 15
+    PASSWORD = 15,
+    R = 16
 };
 
 void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
@@ -328,9 +329,9 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
                     cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
                     return;
                 }
-            } else if (ID_param == P) {
-                if(this->p_flag == 0){
-                    this->p_flag = 1;
+            } else if (ID_param == R) {
+                if(this->r_flag == 0){
+                    this->r_flag = 1;
                 } else {
                     cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
                     return;
@@ -377,7 +378,6 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
                 }
             } else if (ID_param == P) {
                 if(this->p_flag == 0){
-                    this->p_valor = 1;
                     this->p_flag = 1;
                 } else {
                     cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
@@ -706,14 +706,8 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
             this->size_flag = 1;
         }
 
-        if (this->p_flag == 0) {
-
-            this->p_valor = 1;
-            this->p_flag = 1;
-        }
-
-        //archivo nuevo_archivo;
-        //nuevo_archivo.Mkfile(this->id_valor, this->path_valor, this->p_valor, this->size_valor, this->cont_valor, this->montaje, false);
+        archivo nuevo_archivo;
+        nuevo_archivo.mkFile(this->id_valor.toLower(), this->path_valor, this->r_flag, this->size_valor, this->cont_valor, this->montaje, false);
     }
         break;
     case MKDIR:
@@ -802,4 +796,5 @@ int Comando::getParametroID(QString parametro)
     if(parametro.toLower() == "dest") return 13;
     if(parametro.toLower() == "usuario") return 14;
     if(parametro.toLower() == "password") return 15;
+    if(parametro.toLower() == "r") return 16;
 }

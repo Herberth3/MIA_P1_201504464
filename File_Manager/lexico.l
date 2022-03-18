@@ -38,6 +38,7 @@ DELIMITADOR             [\t\r\f" "]
 DIRECTORIO              ([\/]{IDENTIFICADOR})+[\.][d][k]
 DIRECTORIO_EXEC    ([\/]{IDENTIFICADOR})+[\.][s][c][r][i][p][t]
 PASSWORD_L                ({LETRA}|{NUMERO})+
+DIRECTORIO_GEN      ([\/]{IDENTIFICADOR})+[\.]{IDENTIFICADOR}
 
 %x COM
 
@@ -69,6 +70,7 @@ PASSWORD_L                ({LETRA}|{NUMERO})+
 "PASSWORD"             { strcpy(yylval.TEXT, yytext); return r_password; }
 "USUARIO"             { strcpy(yylval.TEXT, yytext); return r_usuario; }
 "P"          { strcpy(yylval.TEXT, yytext); return r_p; }
+"R"          { strcpy(yylval.TEXT, yytext); return r_r; }
 "CONT"          { strcpy(yylval.TEXT, yytext); return r_cont; }
 "DEST"          { strcpy(yylval.TEXT, yytext); return r_dest; }
 
@@ -83,6 +85,7 @@ PASSWORD_L                ({LETRA}|{NUMERO})+
 {DIRECTORIO}                { strcpy(yylval.TEXT, yytext); return directorio; }
 {DIRECTORIO_EXEC}                { strcpy(yylval.TEXT, yytext); return directorio_exec; }
 {PASSWORD_L}                { strcpy(yylval.TEXT, yytext); return password_l; }
+{DIRECTORIO_GEN}                { strcpy(yylval.TEXT, yytext); return directorio_gen; }
 
 
 "." { strcpy(yylval.TEXT, yytext); return punto; }

@@ -66,6 +66,7 @@ class Comando * comand;
 %token<TEXT> r_password;
 %token<TEXT> r_usuario;
 %token<TEXT> r_p;
+%token<TEXT> r_r;
 %token<TEXT> r_cont;
 %token<TEXT> r_dest;
 %token<TEXT> punto;
@@ -98,6 +99,7 @@ class Comando * comand;
 %token<TEXT> directorio;
 %token<TEXT> directorio_exec;
 %token<TEXT> password_l;
+%token<TEXT> directorio_gen;
 
 
 %type <param> PARAMETERS; // lista de instrucciones
@@ -143,6 +145,7 @@ PARAMETERS
     : s_menos r_size s_igual numero_entero  { $$ = new Parametro($2, $4); listParam.append($$); }
     | s_menos r_path s_igual cadena_string      { $$ = new Parametro($2, $4); listParam.append($$); }
     | s_menos r_path s_igual directorio      { $$ = new Parametro($2, $4); listParam.append($$); }
+    | s_menos r_path s_igual directorio_gen      { $$ = new Parametro($2, $4); listParam.append($$); }
     | s_menos r_unit s_igual identificador { $$ = new Parametro($2, $4); listParam.append($$); }
     | s_menos r_fit s_igual identificador { $$ = new Parametro($2, $4); listParam.append($$); }
     | s_menos r_type s_igual identificador { $$ = new Parametro($2, $4); listParam.append($$); }
@@ -157,8 +160,9 @@ PARAMETERS
     | s_menos r_usuario s_igual identificador { $$ = new Parametro($2, $4); listParam.append($$); }
     | s_menos r_usuario s_igual cadena_string { $$ = new Parametro($2, $4); listParam.append($$); }
     | s_menos r_p { $$ = new Parametro($2, ""); listParam.append($$); }
+    | s_menos r_r { $$ = new Parametro($2, ""); listParam.append($$); }
     | s_menos r_cont s_igual cadena_string { $$ = new Parametro($2, $4); listParam.append($$); }
-    | s_menos r_cont s_igual directorio { $$ = new Parametro($2, $4); listParam.append($$); }
+    | s_menos r_cont s_igual directorio_gen { $$ = new Parametro($2, $4); listParam.append($$); }
     | s_menos r_dest s_igual cadena_string { $$ = new Parametro($2, $4); listParam.append($$); }
     | s_menos r_dest s_igual directorio { $$ = new Parametro($2, $4); listParam.append($$); }
 ;
