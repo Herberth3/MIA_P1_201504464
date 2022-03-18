@@ -1,6 +1,8 @@
 #ifndef RECOVERY_H
 #define RECOVERY_H
-#include "mkfs.h"
+#include "mount.h"
+#include "structs.h"
+#include "archivo.h"
 
 class Recovery
 {
