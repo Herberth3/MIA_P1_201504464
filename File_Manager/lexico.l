@@ -54,6 +54,7 @@ DIRECTORIO_GEN      ([\/]{IDENTIFICADOR})+[\.]{IDENTIFICADOR}
 "LOGIN"             { strcpy(yylval.TEXT, yytext); return r_login; }
 "MKFILE"             { strcpy(yylval.TEXT, yytext); return r_mkfile; }
 "MKDIR"             { strcpy(yylval.TEXT, yytext); return r_mkdir; }
+"RENAME"             { strcpy(yylval.TEXT, yytext); return r_rename; }
 "CP"             { strcpy(yylval.TEXT, yytext); return r_cp; }
 "PAUSE"             { strcpy(yylval.TEXT, yytext); return r_pause; }
 "EXEC"             { strcpy(yylval.TEXT, yytext); return r_exec; }

@@ -18,7 +18,8 @@ enum COMANDO
     CP = 9,
     PAUSE = 10,
     EXEC = 11,
-    LOGIN = 12
+    LOGIN = 12,
+    RENAME = 13
 };
 
 enum PARAMETRO
@@ -397,6 +398,39 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
             }
         }
             break;
+        case RENAME:
+        {   // ********************** C O M A N D O   R E N A M E *************************
+            if (ID_param == PATH) {
+                if(this->path_flag == 0){
+                    this->path_valor = valor_param;
+                    this->path_flag = 1;
+                } else {
+                    cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
+                    return;
+                }
+            } else if (ID_param == NAME) {
+                if(this->name_flag == 0){
+                    this->name_valor = valor_param;
+                    this->name_flag = 1;
+                } else {
+                    cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
+                    return;
+                }
+            } else if (ID_param == ID) { // NOTA: El comando RENAME solo pide PATH y NAME
+                if(this->id_flag == 0){ // Se pide el parametro ID para quemar el dato, se ignora al tener el LOGIN
+                    this->id_valor = valor_param; // QUITAR ID CUANDO SE HAGA LO DE LOGIN
+                    this->id_flag = 1;
+                } else {
+                    cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
+                    return;
+                }
+            } else {
+                cout<<"Error. Parametro no permitido en RENAME: "<<nombre_param.toStdString()<<endl;
+                return;
+            }
+
+        }
+            break;
         case CP:
         {   // ********************** C O M A N D O   C P *************************
             if (ID_param == PATH) {
@@ -706,6 +740,12 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
             this->size_flag = 1;
         }
 
+        // Quitar al tener en marcha LOGIN
+        if (this->id_flag == 0) {
+            cout<<"Error. Al no tener LOGIN se necesita ID para ejecutar el comando"<<endl;
+            return;
+        }
+
         archivo nuevo_archivo;
         nuevo_archivo.mkFile(this->id_valor.toLower(), this->path_valor, this->r_flag, this->size_valor, this->cont_valor, this->montaje, false);
     }
@@ -725,6 +765,29 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
 
         carpeta nueva_carpeta;
         nueva_carpeta.mkDir(this->path_valor, this->p_flag, this->id_valor.toLower(), this->montaje, false);
+    }
+        break;
+    case RENAME:
+    {   // ********************** C O M A N D O   R E N A M E *************************
+        if (this->path_flag == 0) {
+            cout<<"Error. Parametro Path no establecido"<<endl;
+            return;
+        }
+
+        if (this->name_flag == 0) {
+            cout<<"Error. Parametro Name no establecido"<<endl;
+            return;
+        }
+
+        // Quitar al tener en marcha LOGIN
+        if (this->id_flag == 0) {
+            cout<<"Error. Al no tener LOGIN se necesita ID para ejecutar el comando"<<endl;
+            return;
+        }
+
+        carpeta directorio;
+        directorio.renameFile(this->id_valor.toLower(), this->path_valor, this->name_valor, this->montaje);
+
     }
         break;
     case CP:
@@ -777,6 +840,7 @@ int Comando::getComandoID(QString comando)
     if(comando == "pause") return 10;
     if(comando == "exec") return 11;
     if(comando == "login") return 12;
+    if(comando == "rename") return 13;
 }
 
 int Comando::getParametroID(QString parametro)

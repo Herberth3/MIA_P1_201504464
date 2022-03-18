@@ -50,6 +50,7 @@ class Comando * comand;
 %token<TEXT> r_login;
 %token<TEXT> r_mkfile;
 %token<TEXT> r_mkdir;
+%token<TEXT> r_rename;
 %token<TEXT> r_cp;
 %token<TEXT> r_pause;
 %token<TEXT> r_exec;
@@ -134,6 +135,7 @@ COMMAND
     | r_pause      { comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_exec s_menos r_path s_igual directorio_exec      { Parametro *nuevo = new Parametro($3, $5); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_exec s_menos r_path s_igual cadena_string      { Parametro *nuevo = new Parametro($3, $5); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
+    | r_rename LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
 ;
 
 LIST_PARAMETERS

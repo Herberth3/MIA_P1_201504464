@@ -323,3 +323,168 @@ string carpeta::getFecha()
     string fechaActual(buffer);
     return fechaActual;
 }
+
+void carpeta::renameFile(QString id, QString path, QString name, Mount montaje)
+{
+    int sizeParticion;
+    int startParticion;
+    int error = 0;
+    string pathDisco_Particion= "";
+    string nombreParticion;
+
+    this->getDatosParticionMontada(id, montaje, &pathDisco_Particion, &startParticion, &sizeParticion, &nombreParticion, &error);
+
+    if(error == 1){
+        return;
+    }
+
+    vector<string> array_directorios;
+    stringstream total_path(path.toStdString());
+    string dir_tmp;
+
+    while (getline(total_path, dir_tmp, '/'))
+    {
+        if(dir_tmp != ""){
+            array_directorios.push_back(dir_tmp);
+        }
+    }
+
+    Structs::SuperBloque superBloque;
+    FILE *disco_actual = fopen(pathDisco_Particion.c_str(), "rb+");
+
+    fseek(disco_actual, startParticion, SEEK_SET);
+    //Leo el superbloque al inicio de la particion
+    fread(&superBloque, sizeof(Structs::SuperBloque), 1, disco_actual);
+
+    Structs::arbolVirtual carpeta_raiz;
+    fseek(disco_actual, superBloque.start_arbol_directorio, SEEK_SET);
+    fread(&carpeta_raiz, sizeof(Structs::arbolVirtual), 1, disco_actual);
+
+    fclose(disco_actual);
+
+    this->recorrerRuta(carpeta_raiz, array_directorios, pathDisco_Particion, superBloque, name.toStdString(), 0);
+}
+
+void carpeta::recorrerRuta(Structs::arbolVirtual avd, vector<string> array_directorios, string pathDisco, Structs::SuperBloque superBloque, string nombre, int pointer)
+{
+    bool esArchivo = false;
+    FILE *disco_actual = fopen(pathDisco.c_str(), "rb+");
+    int apuntador = 0;
+
+    for(int i = 0; i < 6; i++){
+        apuntador = avd.array_subdirectorios[i];
+        Structs::arbolVirtual carpetaHijo;
+        // Nos posicionamos en la carpeta hija
+        fseek(disco_actual, (superBloque.start_arbol_directorio + (apuntador * sizeof(Structs::arbolVirtual))), SEEK_SET);
+        fread(&carpetaHijo, sizeof(Structs::arbolVirtual), 1, disco_actual);
+
+        if(carpetaHijo.nombre_directorio == array_directorios[0]){
+
+            string name = array_directorios[0];
+            array_directorios.erase(array_directorios.begin());
+            // O es archivo o es carpeta.
+            if(array_directorios.size() == 1){
+
+                apuntador = carpetaHijo.detalle_directorio;
+                Structs::detalleDirectorio Archivos;
+                //nos posicionamos en el detalle de directorio.
+                fseek(disco_actual, (superBloque.start_detalle_directorio + (apuntador * sizeof(Structs::detalleDirectorio))), SEEK_SET);
+                fread(&Archivos, sizeof(Structs::detalleDirectorio), 1, disco_actual);
+
+                for(int j = 0; j < 5; j++){
+
+                    if(Archivos.archivos[j].nombre_directorio == array_directorios[0]){
+
+                        cout<< "Archivo Renombrado"<< endl;
+                        esArchivo = true;
+                        strcpy(Archivos.archivos[j].nombre_directorio, nombre.c_str());
+                        // Nos posicionamos en el detalle de directorio
+                        fseek(disco_actual, (superBloque.start_detalle_directorio + (apuntador * sizeof(Structs::detalleDirectorio))), SEEK_SET);
+                        fwrite(&Archivos, sizeof(Structs::detalleDirectorio), 1, disco_actual);
+                        fclose(disco_actual);
+                        return;
+                    }
+                }
+
+                //ES CARPETA.
+                if(!esArchivo){
+
+                    for(int k = 0; k < 6; k++){
+
+                        int pointer = carpetaHijo.array_subdirectorios[k];
+                        Structs::arbolVirtual carpeta;
+                        // Nos posicionamos en la carpeta hija
+                        fseek(disco_actual, (superBloque.start_arbol_directorio + (pointer * sizeof(Structs::arbolVirtual))), SEEK_SET);
+                        fread(&carpeta, sizeof(Structs::arbolVirtual), 1, disco_actual);
+                        fclose(disco_actual);
+
+                        if(carpeta.nombre_directorio == array_directorios[0]){
+
+                            cout<< "Carpeta Renombrada"<< endl;
+                            strcpy(carpeta.nombre_directorio, nombre.c_str());
+                            // Nos posicionamos en la carpeta hija
+                            fseek(disco_actual, (superBloque.start_arbol_directorio + (pointer * sizeof(Structs::arbolVirtual))), SEEK_SET);
+                            fread(&carpeta, sizeof(Structs::arbolVirtual), 1, disco_actual);
+                            fclose(disco_actual);
+                            return;
+                        }
+                    }
+                }
+
+                cout<< "Archivo No encontrado"<< endl;
+                fclose(disco_actual);
+                return;
+
+            }else if(array_directorios.size() == 0){
+
+                if(carpetaHijo.nombre_directorio == name){
+
+                    cout<< "Carpeta Renombrada"<< endl;
+                    strcpy(carpetaHijo.nombre_directorio, nombre.c_str());
+                    // Nos posicionamos en la carpeta hija
+                    fseek(disco_actual, (superBloque.start_arbol_directorio + (apuntador * sizeof(Structs::arbolVirtual))), SEEK_SET);
+                    fwrite(&carpetaHijo, sizeof(Structs::arbolVirtual), 1, disco_actual);
+                    fclose(disco_actual);
+                    return;
+                }else{
+
+                    apuntador = avd.detalle_directorio;
+                    Structs::detalleDirectorio Archivos;
+                    // Nos posicionamos en el detalle de directorio
+                    fseek(disco_actual, (superBloque.start_detalle_directorio + (apuntador * sizeof(Structs::detalleDirectorio))), SEEK_SET);
+                    fread(&Archivos, sizeof(Structs::detalleDirectorio), 1, disco_actual);
+
+                    for(int j=0;j<5;j++){
+
+                        if(Archivos.archivos[j].nombre_directorio == array_directorios[0]){
+
+                            cout<< "Archivo Renombrado"<< endl;
+                            esArchivo = true;
+                            strcpy(Archivos.archivos[j].nombre_directorio, nombre.c_str());
+                            // Nos posicionamos en el detalle de directorio
+                            fseek(disco_actual, (superBloque.start_detalle_directorio + (apuntador * sizeof(Structs::detalleDirectorio))), SEEK_SET);
+                            fwrite(&Archivos, sizeof(Structs::detalleDirectorio), 1, disco_actual);
+                            fclose(disco_actual);
+                            return;
+                        }
+                    }
+                }
+         }else{
+                fclose(disco_actual);
+                this->recorrerRuta(carpetaHijo, array_directorios, pathDisco, superBloque, nombre, apuntador);
+                return;
+            }
+        }
+    }
+
+    //NINGUNO CUMPLE, SE MUEVE AL APUNTADOR INDIRECTO
+    apuntador = avd.avd_siguiente;
+    Structs::arbolVirtual carpetaIndirecta;
+    // Nos posicionamos en la carpeta hija
+    fseek(disco_actual, (superBloque.start_arbol_directorio + (apuntador * sizeof(Structs::arbolVirtual))), SEEK_SET);
+    fread(&carpetaIndirecta, sizeof(Structs::arbolVirtual), 1, disco_actual);
+
+    fclose(disco_actual);
+    this->recorrerRuta(carpetaIndirecta, array_directorios, pathDisco, superBloque, nombre, apuntador);
+    return;
+}
