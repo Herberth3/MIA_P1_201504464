@@ -28,25 +28,29 @@ int main(int argc, char *argv[])
 
             if(line.isEmpty()==false){
 
-                YY_BUFFER_STATE buffer = yy_scan_string(line.toUtf8().constData());
-
-                /*Limpiamos los contadores ya que son variables globales*/
-                linea = 0;
-                yylineno = 0;
-
-                if (listParam.count() > 0) {
-                    listParam.clear();
-                }
-
-                if(yyparse()==0) // Si nos da un número negativo, signifca error.
-                {
-
+                if (line.startsWith("#")) {
+                    // SE SUPONE QUE VIENE UN COMENTARIO Y SE IGNORA
                 }else {
 
-                    printf("\n<OCURRIO UN ERROR!>\n");
-                }
-                yy_delete_buffer(buffer);
+                    YY_BUFFER_STATE buffer = yy_scan_string(line.toUtf8().constData());
 
+                    /*Limpiamos los contadores ya que son variables globales*/
+                    linea = 0;
+                    yylineno = 0;
+
+                    if (listParam.count() > 0) {
+                        listParam.clear();
+                    }
+
+                    if(yyparse()==0) // Si nos da un número negativo, signifca error.
+                    {
+
+                    }else {
+
+                        printf("\n<OCURRIO UN ERROR!>\n");
+                    }
+                    yy_delete_buffer(buffer);
+                }
             }
         }
     }

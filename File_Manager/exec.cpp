@@ -33,22 +33,27 @@ void Exec::Ejecutar()
 
 void Exec::Interpretar(QString comando)
 {
-    YY_BUFFER_STATE buffer = yy_scan_string(comando.toUtf8().constData());
+    if (comando.startsWith("#")) {
+        // SE SUPONE QUE VIENE UN COMENTARIO Y SE IGNORA
+    } else {
+        YY_BUFFER_STATE buffer = yy_scan_string(comando.toUtf8().constData());
 
-    /*Limpiamos los contadores ya que son variables globales*/
-    linea = 0;
-    yylineno = 0;
+        /*Limpiamos los contadores ya que son variables globales*/
+        linea = 0;
+        yylineno = 0;
 
-    if (listParam.count() > 0) {
-        listParam.clear();
+        if (listParam.count() > 0) {
+            listParam.clear();
+        }
+
+        if(yyparse()==0) // Si nos da un número negativo, signifca error.
+        {
+
+        }else {
+
+            printf("\n<OCURRIO UN ERROR!>\n");
+        }
+        yy_delete_buffer(buffer);
     }
 
-    if(yyparse()==0) // Si nos da un número negativo, signifca error.
-    {
-
-    }else {
-
-        printf("\n<OCURRIO UN ERROR!>\n");
-    }
-    yy_delete_buffer(buffer);
 }
