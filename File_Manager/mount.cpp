@@ -69,7 +69,6 @@ void Mount::Ejecutar(QString path, QString name)
     } else{
 
         cout<<"Error. El disco no existe"<<endl;
-        fclose(disco_actual);
         return;
     }
 

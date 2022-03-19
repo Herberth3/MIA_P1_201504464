@@ -242,11 +242,6 @@ void Fdisk::Eliminar_Particion(QString t_delete, QString path, QString name)
 
 void Fdisk::Crear_Particion(int size, QString unit, QString name, QString path, QString fit, QString type)
 {
-    if (this->existeParticion(path, name)) {
-        cout << "Error: Ya existe una particion con este nombre"<<endl;
-        return;
-    }
-
     // Estructura tipo Particion, en la cual se llevara a cabo la creacion
     Partition nueva_particion;
     int tamanoParticion = size;
@@ -297,6 +292,12 @@ void Fdisk::Crear_Particion(int size, QString unit, QString name, QString path, 
     FILE *disco_actual = fopen(path.toStdString().c_str(), "rb+");
     // Se verifica si existe el archivo, de lo contrario ERROR
     if (disco_actual != NULL) {
+        // Antes de proceguir se verifica si no existe alguna particion con el mismo nombre
+        if (this->existeParticion(path, name)) {
+            cout << "Error: Ya existe una particion con este nombre"<<endl;
+            fclose(disco_actual);
+            return;
+        }
 
         // Se posiciona el apuntador al inicio del archivo
         rewind(disco_actual);
@@ -645,7 +646,7 @@ bool Fdisk::existeParticion(QString path, QString name)
                 }
             }
         }
+        fclose(disco_actual);
     }
-    fclose(disco_actual);
     return false;
 }
