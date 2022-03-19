@@ -56,6 +56,7 @@ class Comando * comand;
 %token<TEXT> r_exec;
 %token<TEXT> r_recovery;
 %token<TEXT> r_loss;
+%token<TEXT> r_rep;
 %token<TEXT> r_size;
 %token<TEXT> r_unit;
 %token<TEXT> r_fit;
@@ -72,6 +73,7 @@ class Comando * comand;
 %token<TEXT> r_r;
 %token<TEXT> r_cont;
 %token<TEXT> r_destino;
+%token<TEXT> r_ruta;
 %token<TEXT> punto;
 %token<TEXT> punto_y_coma;
 %token<TEXT> dos_puntos;
@@ -140,6 +142,7 @@ COMMAND
     | r_rename LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_recovery s_menos r_id s_igual id_mount      { Parametro *nuevo = new Parametro($3, $5); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_loss s_menos r_id s_igual id_mount      { Parametro *nuevo = new Parametro($3, $5); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
+    | r_rep LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
 ;
 
 LIST_PARAMETERS
@@ -171,4 +174,6 @@ PARAMETERS
     | s_menos r_cont s_igual directorio_gen { $$ = new Parametro($2, $4); listParam.append($$); }
     | s_menos r_destino s_igual cadena_string { $$ = new Parametro($2, $4); listParam.append($$); }
     | s_menos r_destino s_igual directorio_gen { $$ = new Parametro($2, $4); listParam.append($$); }
+    | s_menos r_ruta s_igual cadena_string { $$ = new Parametro($2, $4); listParam.append($$); }
+    | s_menos r_ruta s_igual directorio_gen { $$ = new Parametro($2, $4); listParam.append($$); }
 ;

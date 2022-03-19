@@ -21,7 +21,8 @@ enum COMANDO
     LOGIN = 12,
     RENAME = 13,
     RECOVERY = 14,
-    LOSS = 15
+    LOSS = 15,
+    REP = 16
 };
 
 enum PARAMETRO
@@ -41,7 +42,8 @@ enum PARAMETRO
     DESTINO = 13,
     USUARIO = 14,
     PASSWORD = 15,
-    R = 16
+    R = 16,
+    RUTA = 17
 };
 
 void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
@@ -63,6 +65,7 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
     this->password_valor = "";
     this->cont_valor = "";
     this->destino_valor = "";
+    this->ruta_valor = "";
 
     this->size_flag = 0;
     this->unit_flag = 0;
@@ -80,6 +83,7 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
     this->r_flag = 0;
     this->cont_flag = 0;
     this->destino_flag = 0;
+    this->ruta_flag = 0;
 
     for(int i = 0; i<this->parametros.size(); i++){
         int ID_param = this->getParametroID(this->parametros[i]->getNombre());
@@ -518,6 +522,46 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
             }
         }
             break;
+        case REP:
+        {   // ********************** C O M A N D O   R E P *************************
+            if (ID_param == PATH) {
+                if(this->path_flag == 0){
+                    this->path_valor = valor_param;
+                    this->path_flag = 1;
+                } else {
+                    cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
+                    return;
+                }
+            } else if (ID_param == RUTA) {
+                if(this->ruta_flag == 0){
+                    this->ruta_valor = valor_param;
+                    this->ruta_flag = 1;
+                } else {
+                    cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
+                    return;
+                }
+            } else if (ID_param == NAME) {
+                if(this->name_flag == 0){
+                    this->name_valor = valor_param;
+                    this->name_flag = 1;
+                } else {
+                    cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
+                    return;
+                }
+            } else if (ID_param == ID) {
+                if(this->id_flag == 0){
+                    this->id_valor = valor_param;
+                    this->id_flag = 1;
+                } else {
+                    cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
+                    return;
+                }
+            } else {
+                cout<<"Error. Parametro no permitido en REP: "<<nombre_param.toStdString()<<endl;
+                return;
+            }
+        }
+            break;
         default:
             cout<<"Comando no encontrado"<<endl;
             return;
@@ -547,6 +591,10 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
     // Si el password viene con " se le remueven
     if (this->password_valor.startsWith("\"")) {
         this->password_valor.replace("\"", "");
+    }
+    // Si el ruta viene con " se le remueven
+    if (this->ruta_valor.startsWith("\"")) {
+        this->ruta_valor.replace("\"", "");
     }
 
     // Se hace match con el comando actual, se hacen algunas validaciones
@@ -881,6 +929,37 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
         simulateLoss.Ejecutar(this->id_valor.toLower(), this->montaje);
     }
         break;
+    case REP:
+    {   // ********************** C O M A N D O   R E P *************************
+        if (this->path_flag == 0) {
+            cout<<"Error. Parametro Path no establecido"<<endl;
+            return;
+        }
+
+        if (this->name_flag == 0) {
+            cout<<"Error. Parametro NAME no establecido"<<endl;
+            return;
+        }else {
+
+            if (this->name_valor.toLower() == "mbr" || this->name_valor.toLower() == "disk" || this->name_valor.toLower() == "inode" ||
+                    this->name_valor.toLower() == "journaling" || this->name_valor.toLower() == "block" || this->name_valor.toLower() == "bm_inode" ||
+                    this->name_valor.toLower() == "bm_block" || this->name_valor.toLower() == "tree" || this->name_valor.toLower() == "sb" ||
+                    this->name_valor.toLower() == "file" || this->name_valor.toLower() == "ls") {
+            } else {
+                cout<<"Error. Valor no permitido en NAME de REP: "<<this->fit_valor.toStdString()<<endl;
+                return;
+            }
+        }
+
+        if (this->id_flag == 0) {
+            cout<<"Error. Parametro ID no establecido"<<endl;
+            return;
+        }
+
+        Rep reporte;
+        reporte.Ejecutar(this->path_valor.toStdString(), this->name_valor.toLower(), this->id_valor.toLower(), this->montaje, this->ruta_valor.toStdString());
+    }
+        break;
     default:
         break;
     }
@@ -904,6 +983,7 @@ int Comando::getComandoID(QString comando)
     if(comando == "rename") return 13;
     if(comando == "recovery") return 14;
     if(comando == "loss") return 15;
+    if(comando == "rep") return 16;
 }
 
 int Comando::getParametroID(QString parametro)
@@ -924,4 +1004,5 @@ int Comando::getParametroID(QString parametro)
     if(parametro.toLower() == "usuario") return 14;
     if(parametro.toLower() == "password") return 15;
     if(parametro.toLower() == "r") return 16;
+    if(parametro.toLower() == "ruta") return 17;
 }

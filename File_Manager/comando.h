@@ -14,6 +14,7 @@
 #include "exec.h"
 #include "recovery.h"
 #include "loss.h"
+#include "rep.h"
 
 using namespace std;
 
@@ -41,6 +42,7 @@ private:
     QString password_valor;
     QString cont_valor;
     QString destino_valor;
+    QString ruta_valor;
 
     int size_flag;
     int unit_flag;
@@ -58,6 +60,7 @@ private:
     int r_flag;
     int cont_flag;
     int destino_flag;
+    int ruta_flag;
 
     // VARIABLES GLOBALES
     // Instancia unica de MOUNT para manejar la estructura encargada de tener

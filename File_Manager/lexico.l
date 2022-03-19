@@ -60,6 +60,7 @@ DIRECTORIO_GEN      ([\/]{IDENTIFICADOR})+([\.]{IDENTIFICADOR})?
 "EXEC"             { strcpy(yylval.TEXT, yytext); return r_exec; }
 "RECOVERY"             { strcpy(yylval.TEXT, yytext); return r_recovery; }
 "LOSS"             { strcpy(yylval.TEXT, yytext); return r_loss; }
+"REP"             { strcpy(yylval.TEXT, yytext); return r_rep; }
 "SIZE"              { strcpy(yylval.TEXT, yytext); return r_size; }
 "UNIT"                 { strcpy(yylval.TEXT, yytext); return r_unit; }
 "FIT"                 { strcpy(yylval.TEXT, yytext); return r_fit; }
@@ -76,6 +77,7 @@ DIRECTORIO_GEN      ([\/]{IDENTIFICADOR})+([\.]{IDENTIFICADOR})?
 "R"          { strcpy(yylval.TEXT, yytext); return r_r; }
 "CONT"          { strcpy(yylval.TEXT, yytext); return r_cont; }
 "DESTINO"          { strcpy(yylval.TEXT, yytext); return r_destino; }
+"RUTA"          { strcpy(yylval.TEXT, yytext); return r_ruta; }
 
 
 {NUMERO_ENTERO}     { strcpy(yylval.TEXT, yytext); return numero_entero; }
