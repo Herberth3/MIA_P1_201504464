@@ -24,8 +24,9 @@ private:
 
     void Modificar_Espacio(int add, QString unit, QString name, QString path);
     void Eliminar_Particion(QString t_delete, QString path, QString name);
-    void Crear_Particion(int size, QString unit, QString name, QString path, QString fit, QString type);
-    void Crear_Logica(Partition particion, QString path);
+    void Crear_Particion_Primaria();
+    void Crear_Particion_Extendida();
+    void Crear_Particion_Logica();
     void show_Particiones(QString path);
     bool existeParticion(QString path, QString name);
 };

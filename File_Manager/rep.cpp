@@ -281,7 +281,7 @@ void Rep::Ejecutar(string path, QString name, QString id, Mount mount, string ru
             system(comando.c_str());
         }
     }
-    else if (name == "bm_arbdir")
+    else if (name == "inode")
     {
         string codigo = "";
 
@@ -320,7 +320,7 @@ void Rep::Ejecutar(string path, QString name, QString id, Mount mount, string ru
             outfile.close();
         }
     }
-    else if (name == "bm_detdir")
+    else if (name == "block")
     {
         string codigo = "";
         Structs::SuperBloque superBloque;
@@ -648,7 +648,7 @@ void Rep::Ejecutar(string path, QString name, QString id, Mount mount, string ru
     {
         cout<<"Reporte para LS no implementado"<<endl;
     }
-    else if (name == "bitacora")
+    else if (name == "journaling")
     {
         Structs::SuperBloque superBloque;
         FILE *disco_particion = fopen(pathDisco_Particion.c_str(), "rb+");

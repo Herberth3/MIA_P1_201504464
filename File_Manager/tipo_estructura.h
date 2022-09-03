@@ -12,10 +12,10 @@ typedef struct {
 }Partition;
 
 typedef struct {
-    int mbr_tamano;
-    char mbr_fecha_creacion[20];
+    int mbr_size;
+    char mbr_date_created[20];
     int mbr_disk_signature;
-    char disk_fit;
+    char mbr_disk_fit;
     Partition mbr_partition[4];
 }MBR;
 
@@ -28,7 +28,6 @@ typedef struct{
     char part_name[16];
 }EBR;
 
-/*
 // STRUCTS PARA EL SISTEMA DE ARCHIVOS
 
 typedef struct{
@@ -49,7 +48,7 @@ typedef struct{
     int s_bm_block_start; //Guardara el inicio del bitmap de bloques
     int s_inode_start; //Guarada el inicio de la tabla de inodos
     int s_block_start; //Guardara el inicio de la tabla de bloques
-}SuperBloque;*/
+}SuperBloque;
 
 typedef struct{
     int i_uid; //UID del usuario propiertario del archivo/carpeta

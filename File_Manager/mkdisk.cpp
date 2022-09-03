@@ -86,10 +86,10 @@ void Mkdisk::Ejecutar()
     // El atributo mbr_partition del MBR es un arreglo de 4 posiciones
     for (int i = 0; i < 4; i++){
         mbr.mbr_partition[i].part_status = '0';
-        mbr.mbr_partition[i].part_type = ' ';
-        mbr.mbr_partition[i].part_fit = ' ';
+        mbr.mbr_partition[i].part_type = '0';
+        mbr.mbr_partition[i].part_fit = '0';
         mbr.mbr_partition[i].part_size = 0;
-        mbr.mbr_partition[i].part_start = 0;
+        mbr.mbr_partition[i].part_start = -1;
         strcpy(mbr.mbr_partition[i].part_name,"");
     }
 
