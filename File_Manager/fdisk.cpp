@@ -35,6 +35,8 @@ void Fdisk::Ejecutar()
 
             this->Crear_Particion_Logica();
         }
+
+        this->show_Particiones(this->path);
     }
 }
 
@@ -439,7 +441,7 @@ void Fdisk::Crear_Particion_Primaria()
 
 void Fdisk::Crear_Particion_Extendida()
 {
-    char auxFit = this->ajuste.toStdString()[0];
+    char auxFit = this->ajuste.toUpper().toStdString()[0];
     string auxPath = this->path.toStdString();
     int size_bytes = 1024;
     char buffer = '1';
@@ -457,33 +459,39 @@ void Fdisk::Crear_Particion_Extendida()
 
     FILE *disco_actual;
     MBR masterboot;
+
     if((disco_actual = fopen(auxPath.c_str(), "rb+"))){
+
         bool flagParticion = false;//Flag para ver si hay una particion disponible
         bool flagExtendida = false;//Flag para ver si ya hay una particion extendida
         int numParticion = 0;//Que numero de particion es
-        fseek(disco_actual,0,SEEK_SET);
-        fread(&masterboot,sizeof(MBR),1,disco_actual);
+
+        fseek(disco_actual, 0, SEEK_SET);
+        fread(&masterboot, sizeof(MBR), 1, disco_actual);
+
         for(int i = 0; i < 4; i++){
             if (masterboot.mbr_partition[i].part_type == 'E'){
                 flagExtendida = true;
                 break;
             }
         }
+
+        // Si no existe una particion extendida
         if(!flagExtendida){
-            // Si no existe una particion extendida
             //Verificar si existe una particion disponible
             for(int i = 0; i < 4; i++){
-                if(masterboot.mbr_partition[i].part_start == -1 || (masterboot.mbr_partition[i].part_status == '1' && masterboot.mbr_partition[i].part_size>=size_bytes)){
+                if(masterboot.mbr_partition[i].part_start == -1 || (masterboot.mbr_partition[i].part_status == '1' && masterboot.mbr_partition[i].part_size >= size_bytes)){
                     flagParticion = true;
                     numParticion = i;
                     break;
                 }
             }
+
             if(flagParticion){
                 //Verificar el espacio libre del disco
                 int espacioUsado = 0;
                 for(int i = 0; i < 4; i++){
-                    if(masterboot.mbr_partition[i].part_status!='1'){
+                    if(masterboot.mbr_partition[i].part_status != '1'){
                         espacioUsado += masterboot.mbr_partition[i].part_size;
                     }
                 }
@@ -493,40 +501,59 @@ void Fdisk::Crear_Particion_Extendida()
 
                 //Verificar que haya espacio suficiente para crear la particion
                 if((masterboot.mbr_size - espacioUsado) >= size_bytes){
+
+                    // Si, se puede crear la particion
+                    // Verificar en las P y en las L de la E, si existe el nombre
                     if(!(existeParticion(this->path, this->nombre))){
+
+                        /** Se crea la particion implementando el primer ajuste **/
                         if(masterboot.mbr_disk_fit == 'F'){
+
                             masterboot.mbr_partition[numParticion].part_type = 'E';
                             masterboot.mbr_partition[numParticion].part_fit = auxFit;
-                            //start
+
                             if(numParticion == 0){
                                 masterboot.mbr_partition[numParticion].part_start = sizeof(masterboot);
                             }else{
                                 masterboot.mbr_partition[numParticion].part_start =  masterboot.mbr_partition[numParticion-1].part_start + masterboot.mbr_partition[numParticion-1].part_size;
                             }
+
                             masterboot.mbr_partition[numParticion].part_size = size_bytes;
                             masterboot.mbr_partition[numParticion].part_status = '0';
                             strcpy(masterboot.mbr_partition[numParticion].part_name, this->nombre.toStdString().c_str());
-                            //Se guarda de nuevo el MBR
-                            fseek(disco_actual,0,SEEK_SET);
-                            fwrite(&masterboot,sizeof(MBR),1,disco_actual);
+
+                            //Se guarda el MBR actualizado
+                            fseek(disco_actual, 0, SEEK_SET);
+                            fwrite(&masterboot, sizeof(MBR), 1, disco_actual);
+
+                            // Se posiciona el puntero en el disco en el part_start de la nueva particion
+                            fseek(disco_actual, masterboot.mbr_partition[numParticion].part_start, SEEK_SET);
                             //Se guarda la particion extendida
-                            fseek(disco_actual, masterboot.mbr_partition[numParticion].part_start,SEEK_SET);
-                            EBR extendedBoot;
+                            EBR extendedBoot; // Nuevo EBR
                             extendedBoot.part_fit = auxFit;
                             extendedBoot.part_status = '0';
                             extendedBoot.part_start = masterboot.mbr_partition[numParticion].part_start;
                             extendedBoot.part_size = 0;
                             extendedBoot.part_next = -1;
                             strcpy(extendedBoot.part_name, "");
-                            fwrite(&extendedBoot,sizeof (EBR),1,disco_actual);
+
+                            // Se escribe el EBR en el disco, en el part_start de la particion ubicado ya con fseek
+                            fwrite(&extendedBoot, sizeof (EBR), 1, disco_actual);
+
+                            // Se escriben 1's despues del EBR llenando el espacio del tamaño de la particion
                             for(int i = 0; i < (size_bytes - (int)sizeof(EBR)); i++){
                                 fwrite(&buffer,1,1,disco_actual);
                             }
+
                             cout << "...\n" << "Particion extendida creada con exito"<< endl;
+
+                            /** Se crea la particion implementando el mejor ajuste **/
                         }else if(masterboot.mbr_disk_fit == 'B'){
+
                             int bestIndex = numParticion;
                             for(int i = 0; i < 4; i++){
-                                if(masterboot.mbr_partition[i].part_start == -1 || (masterboot.mbr_partition[i].part_status == '1' && masterboot.mbr_partition[i].part_size>=size_bytes)){
+
+                                if(masterboot.mbr_partition[i].part_start == -1 || (masterboot.mbr_partition[i].part_status == '1' && masterboot.mbr_partition[i].part_size >= size_bytes)){
                                     if(i != numParticion){
                                         if(masterboot.mbr_partition[bestIndex].part_size > masterboot.mbr_partition[i].part_size){
                                             bestIndex = i;
@@ -535,38 +562,48 @@ void Fdisk::Crear_Particion_Extendida()
                                     }
                                 }
                             }
+
                             masterboot.mbr_partition[bestIndex].part_type = 'E';
                             masterboot.mbr_partition[bestIndex].part_fit = auxFit;
-                            //start
+
                             if(bestIndex == 0){
                                 masterboot.mbr_partition[bestIndex].part_start = sizeof(masterboot);
                             }else{
                                 masterboot.mbr_partition[bestIndex].part_start =  masterboot.mbr_partition[bestIndex-1].part_start + masterboot.mbr_partition[bestIndex-1].part_size;
                             }
+
                             masterboot.mbr_partition[bestIndex].part_size = size_bytes;
                             masterboot.mbr_partition[bestIndex].part_status = '0';
                             strcpy(masterboot.mbr_partition[bestIndex].part_name, this->nombre.toStdString().c_str());
-                            //Se guarda de nuevo el MBR
-                            fseek(disco_actual,0,SEEK_SET);
-                            fwrite(&masterboot,sizeof(MBR),1,disco_actual);
+
+                            //Se guarda el MBR actualizado
+                            fseek(disco_actual, 0, SEEK_SET);
+                            fwrite(&masterboot, sizeof(MBR), 1, disco_actual);
+
+                            // Se posiciona el puntero en el disco en el part_start de la nueva particion
+                            fseek(disco_actual, masterboot.mbr_partition[bestIndex].part_start, SEEK_SET);
                             //Se guarda la particion extendida
-                            fseek(disco_actual, masterboot.mbr_partition[bestIndex].part_start,SEEK_SET);
-                            EBR extendedBoot;
+                            EBR extendedBoot; // Nuevo EBR
                             extendedBoot.part_fit = auxFit;
                             extendedBoot.part_status = '0';
                             extendedBoot.part_start = masterboot.mbr_partition[bestIndex].part_start;
                             extendedBoot.part_size = 0;
                             extendedBoot.part_next = -1;
                             strcpy(extendedBoot.part_name, "");
-                            fwrite(&extendedBoot,sizeof (EBR),1,disco_actual);
+
+                            fwrite(&extendedBoot, sizeof (EBR), 1, disco_actual);
                             for(int i = 0; i < (size_bytes - (int)sizeof(EBR)); i++){
-                                fwrite(&buffer,1,1,disco_actual);
+                                fwrite(&buffer, 1, 1, disco_actual);
                             }
+
                             cout << "...\n" << "Particion extendida creada con exito"<< endl;
+
+                            /** Se crea la particion implementando el peor ajuste **/
                         }else if(masterboot.mbr_disk_fit == 'W'){
+
                             int  worstIndex= numParticion;
                             for(int i = 0; i < 4; i++){
-                                if(masterboot.mbr_partition[i].part_start == -1 || (masterboot.mbr_partition[i].part_status == '1' && masterboot.mbr_partition[i].part_size>=size_bytes)){
+                                if(masterboot.mbr_partition[i].part_start == -1 || (masterboot.mbr_partition[i].part_status == '1' && masterboot.mbr_partition[i].part_size >= size_bytes)){
                                     if(i != numParticion){
                                         if(masterboot.mbr_partition[worstIndex].part_size < masterboot.mbr_partition[i].part_size){
                                             worstIndex = i;
@@ -575,22 +612,27 @@ void Fdisk::Crear_Particion_Extendida()
                                     }
                                 }
                             }
+
                             masterboot.mbr_partition[worstIndex].part_type = 'E';
                             masterboot.mbr_partition[worstIndex].part_fit = auxFit;
-                            //start
+
                             if(worstIndex == 0){
                                 masterboot.mbr_partition[worstIndex].part_start = sizeof(masterboot);
                             }else{
                                 masterboot.mbr_partition[worstIndex].part_start =  masterboot.mbr_partition[worstIndex-1].part_start + masterboot.mbr_partition[worstIndex-1].part_size;
                             }
+
                             masterboot.mbr_partition[worstIndex].part_size = size_bytes;
                             masterboot.mbr_partition[worstIndex].part_status = '0';
                             strcpy(masterboot.mbr_partition[worstIndex].part_name, this->nombre.toStdString().c_str());
-                            //Se guarda de nuevo el MBR
-                            fseek(disco_actual,0,SEEK_SET);
-                            fwrite(&masterboot,sizeof(MBR),1,disco_actual);
+
+                            //Se guarda el MBR actualizado
+                            fseek(disco_actual, 0, SEEK_SET);
+                            fwrite(&masterboot, sizeof(MBR), 1, disco_actual);
+
+                            // Se posiciona el puntero en el disco en el part_start de la nueva particion
+                            fseek(disco_actual, masterboot.mbr_partition[worstIndex].part_start, SEEK_SET);
                             //Se guarda la particion extendida
-                            fseek(disco_actual, masterboot.mbr_partition[worstIndex].part_start,SEEK_SET);
                             EBR extendedBoot;
                             extendedBoot.part_fit = auxFit;
                             extendedBoot.part_status = '0';
@@ -598,11 +640,15 @@ void Fdisk::Crear_Particion_Extendida()
                             extendedBoot.part_size = 0;
                             extendedBoot.part_next = -1;
                             strcpy(extendedBoot.part_name, "");
-                            fwrite(&extendedBoot,sizeof (EBR),1,disco_actual);
+
+                            fwrite(&extendedBoot, sizeof (EBR), 1, disco_actual);
+
                             for(int i = 0; i < (size_bytes - (int)sizeof(EBR)); i++){
-                                fwrite(&buffer,1,1,disco_actual);
+                                fwrite(&buffer, 1, 1, disco_actual);
                             }
+
                             cout << "...\n" << "Particion extendida creada con exito"<< endl;
+
                         }
                     }else{
                         cout << "ERROR: ya existe una particion con ese nombre" << endl;
@@ -625,7 +671,7 @@ void Fdisk::Crear_Particion_Extendida()
 
 void Fdisk::Crear_Particion_Logica()
 {
-    char auxFit = this->ajuste.toStdString()[0];
+    char auxFit = this->ajuste.toUpper().toStdString()[0];
     string auxPath = this->path.toStdString();
     int size_bytes = 1024;
 
@@ -642,10 +688,13 @@ void Fdisk::Crear_Particion_Logica()
 
     FILE *disco_actual;
     MBR masterboot;
+
     if((disco_actual = fopen(auxPath.c_str(), "rb+"))){
+
         int numExtendida = -1;
-        fseek(disco_actual,0,SEEK_SET);
+        fseek(disco_actual, 0, SEEK_SET);
         fread(&masterboot,sizeof(MBR),1,disco_actual);
+
         //Verificar si existe una particion extendida
         for(int i = 0; i < 4; i++){
             if(masterboot.mbr_partition[i].part_type == 'E'){
@@ -653,15 +702,23 @@ void Fdisk::Crear_Particion_Logica()
                 break;
             }
         }
+
         if(!existeParticion(this->path, this->nombre)){
+
             if(numExtendida != -1){
                 EBR extendedBoot;
                 int cont = masterboot.mbr_partition[numExtendida].part_start;
-                fseek(disco_actual,cont,SEEK_SET);
-                fread(&extendedBoot, sizeof(EBR),1,disco_actual);
-                if(extendedBoot.part_size == 0){//Si es la primera
+
+                // Se posiciona en el part_start del primer EBR
+                fseek(disco_actual, cont, SEEK_SET);
+                fread(&extendedBoot, sizeof(EBR), 1, disco_actual);
+
+                // Si es la primera particion logica
+                if(extendedBoot.part_size == 0){
+
+                    // Verificacion si la nueva particion L cabe en la E
                     if(masterboot.mbr_partition[numExtendida].part_size < size_bytes){
-                        cout << "ERROR la particion logica a crear excede el espacio disponible de la particion extendida " << endl;
+                        cout << "ERROR. La particion logica a crear excede el espacio disponible de la particion extendida " << endl;
                     }else{
                         extendedBoot.part_status = '0';
                         extendedBoot.part_fit = auxFit;
@@ -669,31 +726,39 @@ void Fdisk::Crear_Particion_Logica()
                         extendedBoot.part_size = size_bytes;
                         extendedBoot.part_next = -1;
                         strcpy(extendedBoot.part_name, this->nombre.toStdString().c_str());
-                        fseek(disco_actual, masterboot.mbr_partition[numExtendida].part_start ,SEEK_SET);
-                        fwrite(&extendedBoot,sizeof(EBR),1,disco_actual);
+
+                        fseek(disco_actual, masterboot.mbr_partition[numExtendida].part_start, SEEK_SET);
+                        fwrite(&extendedBoot, sizeof(EBR), 1, disco_actual);
                         cout << "...\nParticion logica creada con exito "<< endl;
                     }
+
                 }else{
+                    // Si no es la primera particion Logica
                     while((extendedBoot.part_next != -1) && (ftell(disco_actual) < (masterboot.mbr_partition[numExtendida].part_size + masterboot.mbr_partition[numExtendida].part_start))){
-                        fseek(disco_actual,extendedBoot.part_next,SEEK_SET);
-                        fread(&extendedBoot,sizeof(EBR),1,disco_actual);
+                        fseek(disco_actual, extendedBoot.part_next, SEEK_SET);
+                        fread(&extendedBoot, sizeof(EBR), 1, disco_actual);
                     }
+
                     int espacioNecesario = extendedBoot.part_start + extendedBoot.part_size + size_bytes;
                     if(espacioNecesario <= (masterboot.mbr_partition[numExtendida].part_size + masterboot.mbr_partition[numExtendida].part_start)){
+
                         extendedBoot.part_next = extendedBoot.part_start + extendedBoot.part_size;
                         //Escribimos el next del ultimo EBR
-                        fseek(disco_actual,ftell(disco_actual) - sizeof (EBR),SEEK_SET);
-                        fwrite(&extendedBoot, sizeof(EBR),1 ,disco_actual);
+                        fseek(disco_actual, ftell(disco_actual) - sizeof (EBR), SEEK_SET);
+                        fwrite(&extendedBoot, sizeof(EBR), 1 ,disco_actual);
+
                         //Escribimos el nuevo EBR
-                        fseek(disco_actual,extendedBoot.part_start + extendedBoot.part_size, SEEK_SET);
-                        extendedBoot.part_status = 0;
+                        fseek(disco_actual, extendedBoot.part_start + extendedBoot.part_size, SEEK_SET);
+                        extendedBoot.part_status = '0';
                         extendedBoot.part_fit = auxFit;
                         extendedBoot.part_start = ftell(disco_actual);
                         extendedBoot.part_size = size_bytes;
                         extendedBoot.part_next = -1;
                         strcpy(extendedBoot.part_name, this->nombre.toStdString().c_str());
                         fwrite(&extendedBoot,sizeof(EBR),1,disco_actual);
+
                         cout << "Particion logica creada con exito "<< endl;
+
                     }else{
                         cout << "ERROR la particion logica a crear excede el" << endl;
                         cout << "espacio disponible de la particion extendida" << endl;
@@ -706,7 +771,7 @@ void Fdisk::Crear_Particion_Logica()
             cout << "ERROR ya existe una particion con ese nombre" << endl;
         }
 
-    fclose(disco_actual);
+        fclose(disco_actual);
     }else{
         cout << "ERROR no existe el disco" << endl;
     }
@@ -714,28 +779,29 @@ void Fdisk::Crear_Particion_Logica()
 
 void Fdisk::show_Particiones(QString path)
 {
-    MBR discoEditar;
-    FILE *bfilel = fopen(path.toStdString().c_str(), "rb+");
-    if (bfilel != NULL)
+    MBR masterboot;
+    FILE *disco_actual = fopen(path.toStdString().c_str(), "rb+");
+    if (disco_actual != NULL)
     {
-        rewind(bfilel);
-        fread(&discoEditar, sizeof(MBR), 1, bfilel);
+        rewind(disco_actual);
+        fread(&masterboot, sizeof(MBR), 1, disco_actual);
         cout << "<<------------------------ PARTICIONES ---------------------------->>" << endl;
         for (int i = 0; i < 4; i++)
         {
-            if(discoEditar.mbr_partition[i].part_status != '0'){
+            if(masterboot.mbr_partition[i].part_status != '1'){
                 cout << "<< ------------------- " << i << " ------------------->>" << endl;
-                cout << "Estado: " << discoEditar.mbr_partition[i].part_status << endl;
-                cout << "Nombre: " << discoEditar.mbr_partition[i].part_name << endl;
-                cout << "Fit: " << discoEditar.mbr_partition[i].part_fit << endl;
-                cout << "Part_start: " << discoEditar.mbr_partition[i].part_start << endl;
-                cout << "Size: " << discoEditar.mbr_partition[i].part_size << endl;
-                cout << "Type: " << discoEditar.mbr_partition[i].part_type << endl;
-                if (discoEditar.mbr_partition[i].part_type == 'E')
+                cout << "Estado: " << masterboot.mbr_partition[i].part_status << endl;
+                cout << "Nombre: " << masterboot.mbr_partition[i].part_name << endl;
+                cout << "Fit: " << masterboot.mbr_partition[i].part_fit << endl;
+                cout << "Part_start: " << masterboot.mbr_partition[i].part_start << endl;
+                cout << "Size: " << masterboot.mbr_partition[i].part_size << endl;
+                cout << "Type: " << masterboot.mbr_partition[i].part_type << endl;
+
+                if (masterboot.mbr_partition[i].part_type == 'E')
                 {
                     EBR logicaR;
-                    fseek(bfilel, discoEditar.mbr_partition[i].part_start, SEEK_SET);
-                    fread(&logicaR, sizeof(EBR), 1, bfilel);
+                    fseek(disco_actual, masterboot.mbr_partition[i].part_start, SEEK_SET);
+                    fread(&logicaR, sizeof(EBR), 1, disco_actual);
 
                     while(logicaR.part_next != -1){
                         cout << "<< -------------------- Particion Logica --------------------->> " << endl;
@@ -746,13 +812,13 @@ void Fdisk::show_Particiones(QString path)
                         cout << "Part_next: " << logicaR.part_next << endl;
                         cout << "Estado: " << logicaR.part_status << endl;
 
-                        fseek(bfilel, logicaR.part_next, SEEK_SET);
-                        fread(&logicaR, sizeof(EBR), 1, bfilel);
+                        fseek(disco_actual, logicaR.part_next, SEEK_SET);
+                        fread(&logicaR, sizeof(EBR), 1, disco_actual);
                     }
                 }
             }
         }
-        fclose(bfilel);
+        fclose(disco_actual);
     }else{
         cout << "No se pueden mostrar las particiones por path incorrecto.";
     }
@@ -778,6 +844,7 @@ bool Fdisk::existeParticion(QString path, QString name)
                 pos_extendida = i;
             }
         }
+
         if(pos_extendida != -1){
 
             fseek(disco_actual, masterboot.mbr_partition[pos_extendida].part_start, SEEK_SET);

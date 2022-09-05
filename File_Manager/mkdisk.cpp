@@ -69,7 +69,7 @@ void Mkdisk::Ejecutar()
     }
 
     // Iniciando con ceros los atributos de cada particion
-    // En part_status de la particion: '0' = activa, '1' = inactiva
+    // En part_status de la particion: '0' = sin mkfs, '1' = con mkfs
     // El atributo mbr_partition del MBR es un arreglo de 4 posiciones
     for (int i = 0; i < 4; i++){
         mbr.mbr_partition[i].part_status = '0';

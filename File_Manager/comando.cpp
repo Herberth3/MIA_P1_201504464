@@ -1009,7 +1009,7 @@ int Comando::getParametroID(QString parametro)
     if(parametro.toLower() == "u") return 2;
     if(parametro.toLower() == "f") return 3;
     if(parametro.toLower() == "path") return 4;
-    if(parametro.toLower() == "type") return 5;
+    if(parametro.toLower() == "t") return 5;
     if(parametro.toLower() == "delete") return 6;
     if(parametro.toLower() == "name") return 7;
     if(parametro.toLower() == "add") return 8;
