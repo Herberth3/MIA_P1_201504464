@@ -23,6 +23,7 @@ private:
     QString nombre; // Nombre de la particion
 
     void Modificar_Espacio(int add, QString unit, QString name, QString path);
+    int buscarParticion_L(QString path, QString name);
     void Eliminar_Particion(QString t_delete, QString path, QString name);
     void Crear_Particion_Primaria();
     void Crear_Particion_Extendida();

@@ -163,6 +163,7 @@ PARAMETERS
     | s_menos r_name s_menos s_mayor_que identificador { $$ = new Parametro($2, $5); listParam.append($$); }
     | s_menos r_name s_menos s_mayor_que cadena_string { $$ = new Parametro($2, $5); listParam.append($$); }
     | s_menos r_add s_menos s_mayor_que numero_real { $$ = new Parametro($2, $5); listParam.append($$); }
+    | s_menos r_add s_menos s_mayor_que numero_entero { $$ = new Parametro($2, $5); listParam.append($$); }
     | s_menos r_id s_menos s_mayor_que id_mount { $$ = new Parametro($2, $5); listParam.append($$); }
     | s_menos r_fs s_menos s_mayor_que id_fs { $$ = new Parametro($2, $5); listParam.append($$); }
     | s_menos r_password s_menos s_mayor_que password_l { $$ = new Parametro($2, $5); listParam.append($$); }

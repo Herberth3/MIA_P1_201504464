@@ -35,15 +35,20 @@ void Fdisk::Ejecutar()
 
             this->Crear_Particion_Logica();
         }
-
-        this->show_Particiones(this->path);
     }
+
+    this->show_Particiones(this->path);
 }
 
 void Fdisk::Modificar_Espacio(int add, QString unit, QString name, QString path)
 {
     // Cantidad_add puede ser positivo o negativo
     int cantidad_add = add;
+    QString tipo = "";
+
+    if (cantidad_add > 0) {
+        tipo = "add";
+    }
 
     if (unit.toLower() == "m"){
 
@@ -53,199 +58,340 @@ void Fdisk::Modificar_Espacio(int add, QString unit, QString name, QString path)
         cantidad_add = add * 1024;
     }
 
-    MBR mbr_auxiliar;
     FILE *disco_actual = fopen(path.toStdString().c_str(), "rb+");
 
     if (disco_actual != NULL){
 
+        MBR mbr_auxiliar;
+        // Indice de la particion encotrada
+        int index = -1;
+        int index_Extendida = -1;
+        bool is_Extendida = false;
+
         rewind(disco_actual);
         fread(&mbr_auxiliar, sizeof(MBR), 1, disco_actual);
 
+        /** Buscando el indice de la particion y si esta es E**/
         for (int i = 0; i < 4; i++){
             // Comparar si el nombre de la particion a buscar existe
             if (strcmp(mbr_auxiliar.mbr_partition[i].part_name, name.toStdString().c_str()) == 0){
-                // Se verifica si lo agregado no resta mas al tamaño de la particion
-                if ((cantidad_add + mbr_auxiliar.mbr_partition[i].part_size) > 0){
+                // Se guarda el indice de la particion a modificar
+                index = i;
+                // Ademas del indice se valida si esta es Extendida
+                if(mbr_auxiliar.mbr_partition[i].part_type == 'E')
+                    is_Extendida = true;
+                break;
 
-                    if (mbr_auxiliar.mbr_partition[i + 1].part_start != 0){
-
-                        if ((cantidad_add + mbr_auxiliar.mbr_partition[i].part_size + mbr_auxiliar.mbr_partition[i].part_start) <= mbr_auxiliar.mbr_partition[i + 1].part_start){
-
-                            mbr_auxiliar.mbr_partition[i].part_size = mbr_auxiliar.mbr_partition[i].part_size + (cantidad_add);
-                            cout<<"Part_size modificado correctamente"<<endl;
-                            break;
-                        } else{
-
-                            cout<<"Error: ADD sobrepasa el espacio en la particion." << endl;
-                        }
-                    } else{
-
-                        if ((cantidad_add + mbr_auxiliar.mbr_partition[i].part_size + mbr_auxiliar.mbr_partition[i].part_start) <= mbr_auxiliar.mbr_size){
-
-                            mbr_auxiliar.mbr_partition[i].part_size = mbr_auxiliar.mbr_partition[i].part_size + (cantidad_add);
-                            cout<<"Part_size modificado correctamente"<<endl;
-                            break;
-                        } else{
-
-                            cout<<"Error: ADD sobrepasa el espacio en disco."<<endl;
-                        }
-                    }
-                } else{
-
-                    cout<<"Error: Tamaño a quitar es mayor al de la particion"<<endl;
-                }
+            } else if (mbr_auxiliar.mbr_partition[i].part_type == 'E') {
+                // Se guarda solamente el indice de la E, siendo esta la que no se busca
+                index_Extendida = i;
             }
         }
-        rewind(disco_actual);
-        fwrite(&mbr_auxiliar, sizeof(MBR), 1, disco_actual);
+
+        /** La particion se encontro dentro de las 4 principales **/
+        if(index != -1){
+
+            if(tipo == "add"){//Agregar
+                /** Verificar que exista espacio libre a la derecha **/
+                // Validacion para las primeras 3 particiones
+                if(index != 3){
+                    int p1 = mbr_auxiliar.mbr_partition[index].part_start + mbr_auxiliar.mbr_partition[index].part_size;
+                    int p2 = mbr_auxiliar.mbr_partition[index+1].part_start;
+
+                    if((p2 - p1) != 0){//Hay fragmentacion (existe espacio entre donde termina una con donde empieza la otra)
+                        int fragmentacion = p2-p1;
+                        if(fragmentacion >= cantidad_add){
+                            mbr_auxiliar.mbr_partition[index].part_size = mbr_auxiliar.mbr_partition[index].part_size + cantidad_add;
+                            fseek(disco_actual, 0, SEEK_SET);
+                            fwrite(&mbr_auxiliar, sizeof(MBR), 1, disco_actual);
+
+                            cout << "Se agrego espacio a la particion de manera exitosa" << endl;
+                        }else{
+                            cout << "ERROR no es posible agregar espacio a la particion porque no hay suficiente espacio disponible a su derecha" << endl;
+                        }
+                    }else{// Particion contigua no utilizada
+                        if(mbr_auxiliar.mbr_partition[index + 1].part_status == '1'){
+                            if(mbr_auxiliar.mbr_partition[index + 1].part_size >= cantidad_add){
+                                mbr_auxiliar.mbr_partition[index].part_size = mbr_auxiliar.mbr_partition[index].part_size + cantidad_add;
+                                mbr_auxiliar.mbr_partition[index + 1].part_size = (mbr_auxiliar.mbr_partition[index + 1].part_size - cantidad_add);
+                                mbr_auxiliar.mbr_partition[index + 1].part_start = mbr_auxiliar.mbr_partition[index + 1].part_start + cantidad_add;
+
+                                fseek(disco_actual, 0, SEEK_SET);
+                                fwrite(&mbr_auxiliar, sizeof(MBR), 1, disco_actual);
+                                cout << "Se agrego espacio a la particion de manera exitosa" << endl;
+                            }else{
+                                cout << "ERROR no es posible agregar espacio a la particion porque no hay suficiente espacio disponible a su derecha" << endl;
+                            }
+                        } else {// No hay espacio entre la particion actual y la contigua
+                            cout<<"INFORMACION. Ya no es posible agregar mas espacio a la particion"<<endl;
+                        }
+                    }
+
+                    // Validacion para la ultima (4ta) particion
+                }else{
+                    int p = mbr_auxiliar.mbr_partition[index].part_start + mbr_auxiliar.mbr_partition[index].part_size;
+                    int total = mbr_auxiliar.mbr_size + (int)sizeof(MBR);
+
+                    // Si al final de la ultima particion hay espacio entre ella y el disco
+                    if((total-p) != 0){
+                        int fragmentacion = total - p;
+                        if(fragmentacion >= cantidad_add){
+                            mbr_auxiliar.mbr_partition[index].part_size = mbr_auxiliar.mbr_partition[index].part_size + cantidad_add;
+
+                            fseek(disco_actual, 0, SEEK_SET);
+                            fwrite(&mbr_auxiliar, sizeof(MBR), 1, disco_actual);
+                            cout << "Se agrego espacio a la particion de manera exitosa" << endl;
+                        }else{
+                            cout << "ERROR no es posible agregar espacio a la particion porque no hay suficiente espacio disponible a su derecha" << endl;
+                        }
+                        // El disco esta lleno...
+                    }else{
+                        cout << "ERROR no es posible agregar espacio a la particion porque no hay espacio disponible a su derecha" << endl;
+                    }
+                }
+
+            }else{// Quitar espacio
+                /** Si la particion es una Primaria **/
+                if(!is_Extendida){
+                    // ERROR: La cantidad a quitar sobrepasa el tamaño mismo de la particion
+                    if((cantidad_add * -1) >= mbr_auxiliar.mbr_partition[index].part_size){
+                        cout << "ERROR no es posible quitarle esta cantidad de espacio a la particion porque la borraria" << endl;
+                    }else{
+                        // Se suma la cantidad pues el numero que trae en si es negativo
+                        mbr_auxiliar.mbr_partition[index].part_size = mbr_auxiliar.mbr_partition[index].part_size + cantidad_add;
+                        fseek(disco_actual, 0, SEEK_SET);
+                        fwrite(&mbr_auxiliar, sizeof(MBR), 1, disco_actual);
+                        cout << "Se quito espacio a la particion de manera exitosa" << endl;
+                    }
+                    /** La particion encontrada es Extendida **/
+                }else{
+
+                    // ERROR: La cantidad a quitar sobrepasa el tamaño mismo de la particion
+                    if((cantidad_add * -1) >= mbr_auxiliar.mbr_partition[index_Extendida].part_size){
+                        cout << "ERROR. No es posible quitarle esta cantidad de espacio a la particion porque la borraria" << endl;
+                    }else{
+                        EBR extendedBoot;
+                        fseek(disco_actual, mbr_auxiliar.mbr_partition[index_Extendida].part_start, SEEK_SET);
+                        fread(&extendedBoot, sizeof(EBR), 1, disco_actual);
+
+                        while((extendedBoot.part_next != -1) && (ftell(disco_actual) < (mbr_auxiliar.mbr_partition[index_Extendida].part_size + mbr_auxiliar.mbr_partition[index_Extendida].part_start))){
+                            fseek(disco_actual, extendedBoot.part_next, SEEK_SET);
+                            fread(&extendedBoot, sizeof(EBR), 1, disco_actual);
+                        }
+
+                        int ultimaLogica = extendedBoot.part_start + extendedBoot.part_size;
+                        int aux = (mbr_auxiliar.mbr_partition[index_Extendida].part_start + mbr_auxiliar.mbr_partition[index_Extendida].part_size) + cantidad_add;
+                        if(aux > ultimaLogica){//No toca ninguna logica
+                            mbr_auxiliar.mbr_partition[index_Extendida].part_size = mbr_auxiliar.mbr_partition[index_Extendida].part_size + cantidad_add;
+                            fseek(disco_actual, 0, SEEK_SET);
+                            fwrite(&mbr_auxiliar, sizeof(MBR), 1, disco_actual);
+
+                            cout << "Se quito espacio a la particion de manera exitosa" << endl;
+                        }else{
+                            cout << "ERROR. Si quita ese espacio dañaria una logica" << endl;
+                        }
+                    }
+                }
+            }
+
+            // No se encontro entre las principales, se busca en las Logicas
+        }else{
+            if(index_Extendida != -1){
+
+                int logica = buscarParticion_L(path, name);
+                if(logica != -1){
+                    if(tipo == "add"){
+                        //Verificar que exista espacio libre a su derecha
+                        /** NOTA: AGREGAR ESPACIO A UNA LOGICA ¡NO TERMINADO!**/
+                        EBR extendedBoot;
+                        fseek(disco_actual, logica, SEEK_SET);
+                        fread(&extendedBoot, sizeof(EBR), 1, disco_actual);
+
+                    }else{//Quitar
+                        //Verificar que no la elimine
+                        EBR extendedBoot;
+                        fseek(disco_actual, logica, SEEK_SET);
+                        fread(&extendedBoot, sizeof(EBR), 1, disco_actual);
+
+                        if((cantidad_add * -1) >= extendedBoot.part_size){
+                            cout << "ERROR si quita ese espacio eliminaria la logica" << endl;
+                        }else{
+                            extendedBoot.part_size = extendedBoot.part_size + cantidad_add;
+                            fseek(disco_actual, logica, SEEK_SET);
+                            fwrite(&extendedBoot, sizeof(EBR), 1, disco_actual);
+                            cout << "Se quito espacio a la particion logica de manera exitosa" << endl;
+                        }
+                    }
+                }else{
+                    cout << "ERROR. No se encuentro la particion logica" << endl;
+                }
+            }else{
+                cout << "ERROR. No se cuenta con particion Extendida para redimensionar" << endl;
+            }
+        }
+        fclose(disco_actual);
+
     } else{
 
         cout<<"Error. El disco no existe"<<endl;
         return;
     }
-    fclose(disco_actual);
+}
+
+/**
+  * Funcion que devuelve el byte donde inicia la particion logica si esta existe
+  * return -1, si no se encuentra la particion logica
+**/
+int Fdisk::buscarParticion_L(QString path, QString name)
+{
+    FILE *disco_actual;
+    if((disco_actual = fopen(path.toStdString().c_str(),"rb+"))){
+
+        int index_Extendida = -1;
+        MBR masterboot;
+        fseek(disco_actual, 0, SEEK_SET);
+        fread(&masterboot, sizeof(MBR), 1, disco_actual);
+
+        for(int i = 0; i < 4; i++){
+            if(masterboot.mbr_partition[i].part_type == 'E'){
+                index_Extendida = i;
+                break;
+            }
+        }
+
+        if(index_Extendida != -1){
+            EBR extendedBoot;
+            fseek(disco_actual, masterboot.mbr_partition[index_Extendida].part_start, SEEK_SET);
+            while(fread(&extendedBoot, sizeof(EBR), 1, disco_actual) != 0 && (ftell(disco_actual) < masterboot.mbr_partition[index_Extendida].part_start + masterboot.mbr_partition[index_Extendida].part_size)){
+                if(strcmp(extendedBoot.part_name, name.toStdString().c_str()) == 0){
+                    return (ftell(disco_actual) - sizeof(EBR));
+                }
+            }
+        }
+        fclose(disco_actual);
+    }
+    return -1;
 }
 
 void Fdisk::Eliminar_Particion(QString t_delete, QString path, QString name)
 {
     string eleccion;
-    int part_startExtendida = -1;
     cout << "Confirmar eliminacion de particion: "<< this->path.toStdString() << " (Y/N)? \n";
     cin >> eleccion;
 
+    // Se valida si se confirma la eliminacion
     if (eleccion == "Y" || eleccion == "y"){
 
-        // *************** ELIMINAR SI LA PARTICION ES LOGICA ***********************
-        EBR ebr_auxiliar;
-        FILE *disco_actual =fopen(path.toStdString().c_str(), "rb+");
+        FILE *disco_actual;
+        if((disco_actual = fopen(path.toStdString().c_str(), "rb+"))){
 
-        if (disco_actual != NULL){
+            MBR masterboot;
+            fseek(disco_actual, 0, SEEK_SET);
+            fread(&masterboot, sizeof (MBR), 1, disco_actual);
 
-            MBR mbr_auxiliar;
-            rewind(disco_actual);
-            fread(&mbr_auxiliar, sizeof(MBR), 1, disco_actual);
+            int index = -1;
+            int index_Extendida = -1;
+            bool isExtendida = false;
+            char buffer = '\0';
 
-            for (Partition particion  : mbr_auxiliar.mbr_partition) {
-
-                if (particion.part_type == 'E') {
-
-                    part_startExtendida = particion.part_start;
+            // Buscamos la particion primaria/extendida
+            for(int i = 0; i < 4; i++){
+                if((strcmp(masterboot.mbr_partition[i].part_name, name.toStdString().c_str())) == 0){
+                    index = i;
+                    if(masterboot.mbr_partition[i].part_type == 'E')
+                        isExtendida = true;
+                    break;
+                }else if(masterboot.mbr_partition[i].part_type == 'E'){
+                    index_Extendida = i;
                 }
             }
 
-            // Si existe una particion Extendida, se ingresa al if
-            if(part_startExtendida != -1){
+            /** La particion se encontro en las principales **/
+            if(index != -1){
 
-                fseek(disco_actual, part_startExtendida, SEEK_SET);
-                fread(&ebr_auxiliar, sizeof(EBR), 1, disco_actual);
+                // La eliminacion puede ser para una Primaria como para la Extendida
+                if(t_delete == "full"){
 
-                while(ebr_auxiliar.part_next != -1){
+                    // part_status = '1', inactiva pero ya ocupa espacio
+                    masterboot.mbr_partition[index].part_status = '1';
+                    strcpy(masterboot.mbr_partition[index].part_name, "");
+                    fseek(disco_actual, 0, SEEK_SET);
+                    fwrite(&masterboot, sizeof(MBR), 1, disco_actual);
 
-                    // Se compara el nombre de la particion en el ebr y el nombre que nos envian de parametro
-                    if(strcmp(ebr_auxiliar.part_name, name.toStdString().c_str()) == 0){
+                    fseek(disco_actual, masterboot.mbr_partition[index].part_start, SEEK_SET);
+                    // Rellena el espacio con el caracter \0
+                    fwrite(&buffer,1, masterboot.mbr_partition[index].part_size, disco_actual);
 
-                        ebr_auxiliar.part_status = '0'; // Elimino la particion logica.
-                        fseek(disco_actual, ebr_auxiliar.part_start, SEEK_SET);
-                        fwrite(&ebr_auxiliar, sizeof(EBR), 1, disco_actual);
+                }else{//fast
+                    //masterboot.mbr_partition[index].part_status = '1';
+                    //strcpy(masterboot.mbr_partition[index].part_name,"");
+                    //fseek(disco_actual, 0, SEEK_SET);
+                    //fwrite(&masterboot, sizeof(MBR), 1, disco_actual);
+                }
 
-                        cout<<"Particion logica eliminada exitosamente."<<endl;
-                        fclose(disco_actual);
-                        return;
+                if (!isExtendida) {// Mensaje por eliminacion Primaria
+                    cout << "Particion primaria eliminada con exito" << endl;
+                } else { // Mensaje por eliminacion Extendida
+                    cout << "Particion extendida eliminada con exito" << endl;
+                }
+
+                /** La particion es una posible Logica**/
+            }else{
+
+                if(index_Extendida != -1){
+                    bool isLogica = false;//Bandera para saber si existe
+                    EBR extendedBoot;
+
+                    fseek(disco_actual, masterboot.mbr_partition[index_Extendida].part_start, SEEK_SET);
+                    fread(&extendedBoot, sizeof(EBR), 1, disco_actual);
+
+                    if(extendedBoot.part_size != 0){
+
+                        fseek(disco_actual, masterboot.mbr_partition[index_Extendida].part_start, SEEK_SET);
+
+                        while((fread(&extendedBoot, sizeof(EBR), 1, disco_actual)) != 0 && (ftell(disco_actual) < (masterboot.mbr_partition[index_Extendida].part_start + masterboot.mbr_partition[index_Extendida].part_size))) {
+                            if(strcmp(extendedBoot.part_name, name.toStdString().c_str()) == 0 && extendedBoot.part_status != '1'){
+                                isLogica = true;
+                                break;
+                            }else if(extendedBoot.part_next == -1){//Ya es la ultima y no se encontro
+                                break;
+                            }
+                        }
+
                     }
 
-                    fseek(disco_actual, ebr_auxiliar.part_next, SEEK_SET);
-                    fread(&ebr_auxiliar, sizeof(EBR), 1, disco_actual);
+                    // Se encontro una particion logica
+                    if(isLogica){
+
+                        if(t_delete == "fast"){
+                            //extendedBoot.part_status = '1';
+                            //strcpy(extendedBoot.part_name, "");
+                            //fseek(disco_actual, ftell(disco_actual) - sizeof(EBR), SEEK_SET);
+                            //fwrite(&extendedBoot, sizeof(EBR), 1, disco_actual);
+                            //cout << "Particion logica eliminada con exito" << endl;
+
+                        }else{// La opcion es full
+                            extendedBoot.part_status = '1';
+                            strcpy(extendedBoot.part_name, "");
+                            fseek(disco_actual, ftell(disco_actual) - sizeof(EBR), SEEK_SET);
+                            fwrite(&extendedBoot, sizeof(EBR), 1, disco_actual);
+                            fwrite(&buffer, 1, extendedBoot.part_size, disco_actual);
+                            cout << "Particion logica eliminada con exito" << endl;
+                        }
+
+                    }else{
+                        cout << "ERROR. No se encuentra la particion Logica a eliminar" << endl;
+                    }
+                }else{
+                    cout << "ERROR. No se cuenta con Extendida para eliminar Logica" << endl;
                 }
             }
+
             fclose(disco_actual);
         }else{
-            cout<<"Error. El disco no existe"<<endl;
-            return;
+            cout << "ERROR. El disco donde se va a eliminar no existe" << endl;
         }
 
-        // *************** ELIMINAR SI LA PARTICION ES PRIMARIA O EXTENDIDA ****************
-        if (t_delete.toLower() == "fast"){
-
-            MBR mbr_auxiliar;
-            FILE *disco_actual = fopen(path.toStdString().c_str(), "rb+");
-            rewind(disco_actual);
-            fread(&mbr_auxiliar, sizeof(mbr_auxiliar), 1, disco_actual);
-
-            // Eliminacion via Fast
-            for (int i = 0; i < 4; i++){
-
-                if (strcmp(mbr_auxiliar.mbr_partition[i].part_name, name.toStdString().c_str()) == 0){
-
-                    mbr_auxiliar.mbr_partition[i].part_status = '0';
-
-                    cout<<"Particion eliminada correctamente via Fast"<<endl;
-
-                    int j = i;
-                    Partition particion_auxiliar;
-
-                    // Re-ordenando las particiones
-                    while (j != 3){
-
-                        if (mbr_auxiliar.mbr_partition[j + 1].part_status != '0'){
-
-                            particion_auxiliar = mbr_auxiliar.mbr_partition[j];
-                            mbr_auxiliar.mbr_partition[j] = mbr_auxiliar.mbr_partition[j + 1];
-                            mbr_auxiliar.mbr_partition[j + 1] = particion_auxiliar;
-                        }
-                        j++;
-                    }
-                    break;
-                }
-            }
-
-            rewind(disco_actual);
-            fwrite(&mbr_auxiliar, sizeof(MBR), 1, disco_actual);
-
-            fclose(disco_actual);
-        } else if (t_delete.toLower() == "full"){
-
-            MBR mbr_auxiliar;
-            FILE *disco_actual = fopen(path.toStdString().c_str(), "rb+");
-            rewind(disco_actual);
-            fread(&mbr_auxiliar, sizeof(mbr_auxiliar), 1, disco_actual);
-
-            // Eliminacion via full
-            for (int i = 0; i < 4; i++){
-
-                if (strcmp(mbr_auxiliar.mbr_partition[i].part_name, name.toStdString().c_str()) == 0){
-
-                    mbr_auxiliar.mbr_partition[i].part_status = '0';
-                    mbr_auxiliar.mbr_partition[i].part_fit = ' ';
-                    strcpy(mbr_auxiliar.mbr_partition[i].part_name, "");
-                    mbr_auxiliar.mbr_partition[i].part_start = 0;
-                    mbr_auxiliar.mbr_partition[i].part_size = 0;
-                    mbr_auxiliar.mbr_partition[i].part_type = ' ';
-
-                    cout<<"Particion eliminada correctamente via Full"<<endl;
-
-                    int j = i;
-                    Partition particion_auxiliar;
-
-                    // Re-ordenando las particiones
-                    while (j != 3){
-
-                        if (mbr_auxiliar.mbr_partition[j + 1].part_status != '0'){
-
-                            particion_auxiliar = mbr_auxiliar.mbr_partition[j];
-                            mbr_auxiliar.mbr_partition[j] = mbr_auxiliar.mbr_partition[j + 1];
-                            mbr_auxiliar.mbr_partition[j + 1] = particion_auxiliar;
-                        }
-                        j++;
-                    }
-                    break;
-                }
-            }
-
-            rewind(disco_actual);
-            fwrite(&mbr_auxiliar, sizeof(MBR), 1, disco_actual);
-
-            fclose(disco_actual);
-        }
     }else if (eleccion == "N" || eleccion == "n"){
         cout << "Particion no eliminada!" << endl;
     }else cout << "Opcion incorrecta, particion no eliminada!" << endl;

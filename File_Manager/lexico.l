@@ -36,7 +36,7 @@ ID_FS                               {NUMERO}[f][s]
 CADENA_STRING               [\"][^\"\n]*[\"\n]
 DELIMITADOR             [\t\r\f" "]
 DIRECTORIO              ([\/]{IDENTIFICADOR})+[\.][d][s][k]
-DIRECTORIO_EXEC    ([\/]{IDENTIFICADOR})+[\.][s][c][r][i][p][t]
+DIRECTORIO_EXEC    ([\/]{IDENTIFICADOR})+[\.][m][i][a]
 PASSWORD_L                ({LETRA}|{NUMERO})+
 DIRECTORIO_GEN      ([\/]{IDENTIFICADOR})+([\.]{IDENTIFICADOR})?
 
