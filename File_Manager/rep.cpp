@@ -38,8 +38,8 @@ void Rep::Ejecutar(string path, QString name, QString id, Mount mount, string ru
     if (name == "mbr")
     {
         string codigoInterno = "";
-        string size = to_string(mbrEditar.mbr_tamano);
-        string date(mbrEditar.mbr_fecha_creacion);
+        string size = to_string(mbrEditar.mbr_size);
+        string date(mbrEditar.mbr_date_created);
         string firma = to_string(mbrEditar.mbr_disk_signature);
         string fit = "";
 
@@ -180,7 +180,7 @@ void Rep::Ejecutar(string path, QString name, QString id, Mount mount, string ru
                 Estado.push_back(mbrEditar.mbr_partition[i].part_status);
                 string type = "";
                 type.push_back(mbrEditar.mbr_partition[i].part_type);
-                int porcentaje = ((mbrEditar.mbr_partition[i].part_size * 100) / mbrEditar.mbr_tamano);
+                int porcentaje = ((mbrEditar.mbr_partition[i].part_size * 100) / mbrEditar.mbr_size);
                 acumulado = acumulado + porcentaje;
                 string porcentajeString = to_string(porcentaje);
 

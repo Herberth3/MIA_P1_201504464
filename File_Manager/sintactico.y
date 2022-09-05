@@ -57,6 +57,7 @@ class Comando * comand;
 %token<TEXT> r_recovery;
 %token<TEXT> r_loss;
 %token<TEXT> r_rep;
+
 %token<TEXT> r_size;
 %token<TEXT> r_unit;
 %token<TEXT> r_fit;
@@ -126,22 +127,22 @@ INICIO
 
 COMMAND
     : r_mkdisk LIST_PARAMETERS  { comando.Ejecutar($1, listParam); $$ = new Comando(); }
-    | r_rmdisk s_menos r_path s_igual directorio      { Parametro *nuevo = new Parametro($3, $5); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
-    | r_rmdisk s_menos r_path s_igual cadena_string      { Parametro *nuevo = new Parametro($3, $5); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
+    | r_rmdisk s_menos r_path s_menos s_mayor_que directorio      { Parametro *nuevo = new Parametro($3, $6); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
+    | r_rmdisk s_menos r_path s_menos s_mayor_que cadena_string      { Parametro *nuevo = new Parametro($3, $6); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_fdisk LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_mount LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
-    | r_unmount s_menos r_id s_igual id_mount      { Parametro *nuevo = new Parametro($3, $5); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
+    | r_unmount s_menos r_id s_menos s_mayor_que id_mount      { Parametro *nuevo = new Parametro($3, $6); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_mkfs LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_login LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_mkfile LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_mkdir LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_copy LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_pause      { comando.Ejecutar($1, listParam); $$ = new Comando(); }
-    | r_exec s_menos r_path s_igual directorio_exec      { Parametro *nuevo = new Parametro($3, $5); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
-    | r_exec s_menos r_path s_igual cadena_string      { Parametro *nuevo = new Parametro($3, $5); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
+    | r_exec s_menos r_path s_menos s_mayor_que directorio_exec      { Parametro *nuevo = new Parametro($3, $6); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
+    | r_exec s_menos r_path s_menos s_mayor_que cadena_string      { Parametro *nuevo = new Parametro($3, $6); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_rename LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
-    | r_recovery s_menos r_id s_igual id_mount      { Parametro *nuevo = new Parametro($3, $5); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
-    | r_loss s_menos r_id s_igual id_mount      { Parametro *nuevo = new Parametro($3, $5); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
+    | r_recovery s_menos r_id s_menos s_mayor_que id_mount      { Parametro *nuevo = new Parametro($3, $6); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
+    | r_loss s_menos r_id s_menos s_mayor_que id_mount      { Parametro *nuevo = new Parametro($3, $6); listParam.append(nuevo); comando.Ejecutar($1, listParam); $$ = new Comando(); }
     | r_rep LIST_PARAMETERS   { comando.Ejecutar($1, listParam); $$ = new Comando(); }
 ;
 
@@ -151,29 +152,29 @@ LIST_PARAMETERS
 ;
 
 PARAMETERS
-    : s_menos r_size s_igual numero_entero  { $$ = new Parametro($2, $4); listParam.append($$); }
-    | s_menos r_path s_igual cadena_string      { $$ = new Parametro($2, $4); listParam.append($$); }
-    | s_menos r_path s_igual directorio      { $$ = new Parametro($2, $4); listParam.append($$); }
-    | s_menos r_path s_igual directorio_gen      { $$ = new Parametro($2, $4); listParam.append($$); }
-    | s_menos r_unit s_igual identificador { $$ = new Parametro($2, $4); listParam.append($$); }
-    | s_menos r_fit s_igual identificador { $$ = new Parametro($2, $4); listParam.append($$); }
-    | s_menos r_type s_igual identificador { $$ = new Parametro($2, $4); listParam.append($$); }
-    | s_menos r_delete s_igual identificador { $$ = new Parametro($2, $4); listParam.append($$); }
-    | s_menos r_name s_igual identificador { $$ = new Parametro($2, $4); listParam.append($$); }
-    | s_menos r_name s_igual cadena_string { $$ = new Parametro($2, $4); listParam.append($$); }
-    | s_menos r_add s_igual numero_real { $$ = new Parametro($2, $4); listParam.append($$); }
-    | s_menos r_id s_igual id_mount { $$ = new Parametro($2, $4); listParam.append($$); }
-    | s_menos r_fs s_igual id_fs { $$ = new Parametro($2, $4); listParam.append($$); }
-    | s_menos r_password s_igual password_l { $$ = new Parametro($2, $4); listParam.append($$); }
-    | s_menos r_password s_igual cadena_string { $$ = new Parametro($2, $4); listParam.append($$); }
-    | s_menos r_usuario s_igual identificador { $$ = new Parametro($2, $4); listParam.append($$); }
-    | s_menos r_usuario s_igual cadena_string { $$ = new Parametro($2, $4); listParam.append($$); }
+    : s_menos r_size s_menos s_mayor_que numero_entero  { $$ = new Parametro($2, $5); listParam.append($$); }
+    | s_menos r_path s_menos s_mayor_que cadena_string      { $$ = new Parametro($2, $5); listParam.append($$); }
+    | s_menos r_path s_menos s_mayor_que directorio      { $$ = new Parametro($2, $5); listParam.append($$); }
+    | s_menos r_path s_menos s_mayor_que directorio_gen      { $$ = new Parametro($2, $5); listParam.append($$); }
+    | s_menos r_unit s_menos s_mayor_que identificador { $$ = new Parametro($2, $5); listParam.append($$); }
+    | s_menos r_fit s_menos s_mayor_que identificador { $$ = new Parametro($2, $5); listParam.append($$); }
+    | s_menos r_type s_menos s_mayor_que identificador { $$ = new Parametro($2, $5); listParam.append($$); }
+    | s_menos r_delete s_menos s_mayor_que identificador { $$ = new Parametro($2, $5); listParam.append($$); }
+    | s_menos r_name s_menos s_mayor_que identificador { $$ = new Parametro($2, $5); listParam.append($$); }
+    | s_menos r_name s_menos s_mayor_que cadena_string { $$ = new Parametro($2, $5); listParam.append($$); }
+    | s_menos r_add s_menos s_mayor_que numero_real { $$ = new Parametro($2, $5); listParam.append($$); }
+    | s_menos r_id s_menos s_mayor_que id_mount { $$ = new Parametro($2, $5); listParam.append($$); }
+    | s_menos r_fs s_menos s_mayor_que id_fs { $$ = new Parametro($2, $5); listParam.append($$); }
+    | s_menos r_password s_menos s_mayor_que password_l { $$ = new Parametro($2, $5); listParam.append($$); }
+    | s_menos r_password s_menos s_mayor_que cadena_string { $$ = new Parametro($2, $5); listParam.append($$); }
+    | s_menos r_usuario s_menos s_mayor_que identificador { $$ = new Parametro($2, $5); listParam.append($$); }
+    | s_menos r_usuario s_menos s_mayor_que cadena_string { $$ = new Parametro($2, $5); listParam.append($$); }
     | s_menos r_p { $$ = new Parametro($2, ""); listParam.append($$); }
     | s_menos r_r { $$ = new Parametro($2, ""); listParam.append($$); }
-    | s_menos r_cont s_igual cadena_string { $$ = new Parametro($2, $4); listParam.append($$); }
-    | s_menos r_cont s_igual directorio_gen { $$ = new Parametro($2, $4); listParam.append($$); }
-    | s_menos r_destino s_igual cadena_string { $$ = new Parametro($2, $4); listParam.append($$); }
-    | s_menos r_destino s_igual directorio_gen { $$ = new Parametro($2, $4); listParam.append($$); }
-    | s_menos r_ruta s_igual cadena_string { $$ = new Parametro($2, $4); listParam.append($$); }
-    | s_menos r_ruta s_igual directorio_gen { $$ = new Parametro($2, $4); listParam.append($$); }
+    | s_menos r_cont s_menos s_mayor_que cadena_string { $$ = new Parametro($2, $5); listParam.append($$); }
+    | s_menos r_cont s_menos s_mayor_que directorio_gen { $$ = new Parametro($2, $5); listParam.append($$); }
+    | s_menos r_destino s_menos s_mayor_que cadena_string { $$ = new Parametro($2, $5); listParam.append($$); }
+    | s_menos r_destino s_menos s_mayor_que directorio_gen { $$ = new Parametro($2, $5); listParam.append($$); }
+    | s_menos r_ruta s_menos s_mayor_que cadena_string { $$ = new Parametro($2, $5); listParam.append($$); }
+    | s_menos r_ruta s_menos s_mayor_que directorio_gen { $$ = new Parametro($2, $5); listParam.append($$); }
 ;

@@ -8,10 +8,6 @@
 
 #include <sys/stat.h>
 #include <dirent.h>
-//#include <fstream>
-//#include "qdebug.h"
-//#include <stdlib.h>
-//#include <ctime>
 
 using namespace std;
 

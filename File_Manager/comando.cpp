@@ -85,6 +85,10 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
     this->destino_flag = 0;
     this->ruta_flag = 0;
 
+    /**
+      * VALIDACIONES DE REPETICION, PARAMETRO NO PERTENECIENTE AL COMANDO
+      * SE RECORREN TODOS LOS PARAMETROS CAPTURADOS
+      **/
     for(int i = 0; i<this->parametros.size(); i++){
         int ID_param = this->getParametroID(this->parametros[i]->getNombre());
         QString nombre_param = this->parametros[i]->getNombre();
@@ -106,7 +110,7 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
                 }
             } else if (ID_param == UNIT) {
                 if(this->unit_flag == 0){
-                    this->unit_valor = valor_param;
+                    this->unit_valor = valor_param.toLower();
                     this->unit_flag = 1;
                 } else {
                     cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
@@ -114,7 +118,7 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
                 }
             } else if (ID_param == FIT) {
                 if(this->fit_flag == 0){
-                    this->fit_valor = valor_param;
+                    this->fit_valor = valor_param.toLower();
                     this->fit_flag = 1;
                 } else {
                     cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
@@ -167,7 +171,7 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
                 }
             } else if (ID_param == UNIT) {
                 if(this->unit_flag == 0){
-                    this->unit_valor = valor_param;
+                    this->unit_valor = valor_param.toLower();
                     this->unit_flag = 1;
                 } else {
                     cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
@@ -183,7 +187,7 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
                 }
             }else if (ID_param == TYPE) {
                 if(this->type_flag == 0){
-                    this->type_valor = valor_param;
+                    this->type_valor = valor_param.toLower();
                     this->type_flag = 1;
                 } else {
                     cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
@@ -191,7 +195,7 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
                 }
             } else if (ID_param == FIT) {
                 if(this->fit_flag == 0){
-                    this->fit_valor = valor_param;
+                    this->fit_valor = valor_param.toLower();
                     this->fit_flag = 1;
                 } else {
                     cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
@@ -199,7 +203,7 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
                 }
             }else if (ID_param == DELETE) {
                 if(this->delete_flag == 0){
-                    this->delete_valor = valor_param;
+                    this->delete_valor = valor_param.toLower();
                     this->delete_flag = 1;
                 } else {
                     cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
@@ -212,7 +216,7 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
                 }
             }else if (ID_param == NAME) {
                 if(this->name_flag == 0){
-                    this->name_valor = valor_param;
+                    this->name_valor = valor_param.toLower();
                     this->name_flag = 1;
                 } else {
                     cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
@@ -568,6 +572,9 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
         }
     }
 
+    /**
+      * SE QUITAN LAS COMILLAS A LOS VALORES DE ALGUNOS PARAMETROS
+    **/
     // Si la ruta viene con " se le remueven
     if (this->path_valor.startsWith("\"")) {
         this->path_valor.replace("\"", "");
@@ -597,8 +604,12 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
         this->ruta_valor.replace("\"", "");
     }
 
-    // Se hace match con el comando actual, se hacen algunas validaciones
-    // Se ejecuta la accion de cada comando
+    /**
+    * VALIDACION DE PARAMETROS OBLIGATORIOS Y ESTABLECIMIENTO DE VALORES
+    * A LOS PARAMETROS NO OBLIGATORIOS.
+    * EJECUCION DEL COMANDO
+    **/
+
     switch (this->comandoID) {
 
     case MKDISK:
@@ -611,22 +622,28 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
             return;
         }
 
-        if (this->unit_valor != "") {
+        if (this->unit_flag == 1) {
 
-            if (this->unit_valor.toLower() == "k" || this->unit_valor.toLower() == "m") {
+            if (this->unit_valor == "k" || this->unit_valor == "m") {
             }else {
                 cout<<"Error. Valor no permitido en Unit: "<<this->unit_valor.toStdString()<<endl;
                 return;
             }
+        } else {
+            this->unit_valor = "m";
+            this->unit_flag = 1;
         }
 
-        if (this->fit_valor != "") {
+        if (this->fit_flag == 1) {
 
             if (this->fit_valor.toLower() == "ff" || this->fit_valor.toLower() == "bf" || this->fit_valor.toLower() == "wf") {
             }else {
                 cout<<"Error. Valor no permitido en Fit: "<<this->fit_valor.toStdString()<<endl;
                 return;
             }
+        } else {
+            this->fit_valor = "ff";
+            this->fit_flag = 1;
         }
 
         if (this->path_flag == 0) {
@@ -668,46 +685,46 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
         // O corroborar que la bandera del parametro este en 1
         if (this->unit_flag == 1) {
 
-            if (this->unit_valor.toLower() == "k" || this->unit_valor.toLower() == "m" || this->unit_valor.toLower() == "b") {
+            if (this->unit_valor == "k" || this->unit_valor == "m" || this->unit_valor == "b") {
             }else {
                 cout<<"Error. Valor no permitido en Unit: "<<this->unit_valor.toStdString()<<endl;
                 return;
             }
         }else {
             // Si el parametro UNIT no fue declarado como parametro, se toma por defecto el valor K (Kilobytes).
-            this->unit_valor = "K";
+            this->unit_valor = "k";
             this->unit_flag = 1;
         }
 
         if (this->fit_flag == 1) {
 
-            if (this->fit_valor.toLower() == "ff" || this->fit_valor.toLower() == "bf" || this->fit_valor.toLower() == "wf") {
+            if (this->fit_valor == "ff" || this->fit_valor == "bf" || this->fit_valor == "wf") {
             }else {
                 cout<<"Error. Valor no permitido en Fit: "<<this->fit_valor.toStdString()<<endl;
                 return;
             }
         }else {
             // Si el parametro FIT no fue declarado como parametro, se toma por defecto el valor WF (worst fit).
-            this->fit_valor = "WF";
+            this->fit_valor = "wf";
             this->fit_flag = 1;
         }
 
         if (this->type_flag == 1) {
 
-            if (this->type_valor.toLower() == "p" || this->type_valor.toLower() == "e" || this->type_valor.toLower() == "l") {
+            if (this->type_valor == "p" || this->type_valor == "e" || this->type_valor == "l") {
             }else {
                 cout<<"Error. Valor no permitido en Type: "<<this->type_valor.toStdString()<<endl;
                 return;
             }
         }else {
             // Si el parametro TYPE no fue declarado como parametro, se toma por defecto el valor P (primaria).
-            this->type_valor = "P";
+            this->type_valor = "p";
             this->type_flag = 1;
         }
 
         if (this->delete_flag == 1) {
 
-            if (this->delete_valor.toLower() == "fast" || this->delete_valor.toLower() == "full") {
+            if (this->delete_valor == "full") {
             } else {
                 cout<<"Error. Valor no permitido en Delete: "<<this->delete_valor.toStdString()<<endl;
                 return;
@@ -988,9 +1005,9 @@ int Comando::getComandoID(QString comando)
 
 int Comando::getParametroID(QString parametro)
 {
-    if(parametro.toLower() == "size") return 1;
-    if(parametro.toLower() == "unit") return 2;
-    if(parametro.toLower() == "fit") return 3;
+    if(parametro.toLower() == "s") return 1;
+    if(parametro.toLower() == "u") return 2;
+    if(parametro.toLower() == "f") return 3;
     if(parametro.toLower() == "path") return 4;
     if(parametro.toLower() == "type") return 5;
     if(parametro.toLower() == "delete") return 6;

@@ -35,7 +35,7 @@ ID_MOUNT                        [6][4]{NUMERO_ENTERO}{LETRA}
 ID_FS                               {NUMERO}[f][s]
 CADENA_STRING               [\"][^\"\n]*[\"\n]
 DELIMITADOR             [\t\r\f" "]
-DIRECTORIO              ([\/]{IDENTIFICADOR})+[\.][d][k]
+DIRECTORIO              ([\/]{IDENTIFICADOR})+[\.][d][s][k]
 DIRECTORIO_EXEC    ([\/]{IDENTIFICADOR})+[\.][s][c][r][i][p][t]
 PASSWORD_L                ({LETRA}|{NUMERO})+
 DIRECTORIO_GEN      ([\/]{IDENTIFICADOR})+([\.]{IDENTIFICADOR})?
@@ -61,11 +61,12 @@ DIRECTORIO_GEN      ([\/]{IDENTIFICADOR})+([\.]{IDENTIFICADOR})?
 "RECOVERY"             { strcpy(yylval.TEXT, yytext); return r_recovery; }
 "LOSS"             { strcpy(yylval.TEXT, yytext); return r_loss; }
 "REP"             { strcpy(yylval.TEXT, yytext); return r_rep; }
-"SIZE"              { strcpy(yylval.TEXT, yytext); return r_size; }
-"UNIT"                 { strcpy(yylval.TEXT, yytext); return r_unit; }
-"FIT"                 { strcpy(yylval.TEXT, yytext); return r_fit; }
+
+"S"              { strcpy(yylval.TEXT, yytext); return r_size; }
+"U"                 { strcpy(yylval.TEXT, yytext); return r_unit; }
+"F"                 { strcpy(yylval.TEXT, yytext); return r_fit; }
 "PATH"          { strcpy(yylval.TEXT, yytext); return r_path; }
-"TYPE"          { strcpy(yylval.TEXT, yytext); return r_type; }
+"T"          { strcpy(yylval.TEXT, yytext); return r_type; }
 "DELETE"          { strcpy(yylval.TEXT, yytext); return r_delete; }
 "NAME"          { strcpy(yylval.TEXT, yytext); return r_name; }
 "ADD"          { strcpy(yylval.TEXT, yytext); return r_add; }

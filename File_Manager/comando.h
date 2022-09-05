@@ -28,6 +28,7 @@ private:
     int comandoID;
     QList<Parametro *> parametros;
 
+    /** ALMACENAN EL VALOR QUE TRAE EL PARAMETRO RESPECTIVO**/
     int size_valor;
     int add_valor;
     QString unit_valor;
@@ -44,6 +45,7 @@ private:
     QString destino_valor;
     QString ruta_valor;
 
+    /** BANDERAS QUE CONFIRMAN SI EL PARAMETRO ESTA REPETIDO**/
     int size_flag;
     int unit_flag;
     int fit_flag;
@@ -62,13 +64,17 @@ private:
     int destino_flag;
     int ruta_flag;
 
-    // VARIABLES GLOBALES
-    // Instancia unica de MOUNT para manejar la estructura encargada de tener
-    // las particiones en memoria. Unica para que no se reinscriba la instancia y se pierda la informacion.
+    /** VARIABLES GLOBALES
+    * Instancia unica de MOUNT para manejar la estructura encargada de tener
+    * las particiones en memoria. Unica para que no se reinscriba la instancia y se pierda la informacion.
+    **/
     Mount montaje;
     bool flag_login = false;
     Sesion currentSession;
 
+    /**
+      * Retornan el numero identificador en el ENUM para cada comando y parametro
+      **/
     int getComandoID(QString comando);
     int getParametroID(QString parametro);
 
