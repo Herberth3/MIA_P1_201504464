@@ -31,7 +31,7 @@ LETRAS               [a-zA-ZÑñáéíóúÁÉÍÓÚ]+
 LETRA               [a-zA-ZÑñáéíóúÁÉÍÓÚ]
 
 IDENTIFICADOR               {LETRAS}({LETRAS}|{NUMERO_ENTERO}|"_")*
-ID_MOUNT                        [6][4]{NUMERO_ENTERO}{LETRA}
+ID_MOUNT                        [6][4]{NUMERO_ENTERO}{IDENTIFICADOR}
 ID_FS                               {NUMERO}[f][s]
 CADENA_STRING               [\"][^\"\n]*[\"\n]
 DELIMITADOR             [\t\r\f" "]

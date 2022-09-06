@@ -1,6 +1,8 @@
 #ifndef UNMOUNT_H
 #define UNMOUNT_H
 #include "mount.h"
+#include <QRegularExpression>
+#include <QRegularExpressionMatch>
 
 class Unmount
 {

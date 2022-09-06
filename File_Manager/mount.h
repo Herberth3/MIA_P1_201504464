@@ -15,7 +15,7 @@ public:
 
     typedef struct
     {
-        char letra;
+        int numero = 0;
         int estado = 0;
         char nombre[16] = "";
     } PARTICIONMONTADA;
@@ -23,7 +23,7 @@ public:
     typedef struct
     {
         char path[100] = "";
-        int numero = 0;
+        char nombre[16] = "";
         int estado = 0;
         PARTICIONMONTADA particiones[99];
     } DISCOMONTADO;

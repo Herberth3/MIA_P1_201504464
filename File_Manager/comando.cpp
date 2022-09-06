@@ -245,7 +245,7 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
         {    // ********************** C O M A N D O   M O U N T *************************
             if (ID_param == NAME) {
                 if(this->name_flag == 0){
-                    this->name_valor = valor_param;
+                    this->name_valor = valor_param.toLower();
                     this->name_flag = 1;
                 } else {
                     cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
@@ -755,7 +755,7 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
     {   // ********************** C O M A N D O   U N M O U N T *************************
         if (this->id_valor.startsWith("64")) {
             Unmount desmontarDisco;
-            desmontarDisco.Ejecutar(this->id_valor.toLower(), this->montaje);
+            desmontarDisco.Ejecutar(this->id_valor, this->montaje);
         }else {
             cout<<"Error. El ID no cumple con la estructura requerida"<<endl;
             return;
