@@ -5,283 +5,40 @@ Rep::Rep()
 
 }
 
-void Rep::Ejecutar(string path, QString name, QString id, Mount mount, string rute)
+void Rep::Ejecutar(QString path, QString name, QString id, Mount mount, QString rute)
 {
-    int sizeParticion;
     int startParticion;
     int error = 0;
     string pathDisco_Particion= "";
-    string nombreParticion;
 
-    this->getDatosParticionMontada(id, mount, &pathDisco_Particion, &startParticion, &sizeParticion, &nombreParticion, &error);
+    this->getDatosParticionMontada(id, mount, &pathDisco_Particion, &error);
 
+    // Si 'error' obtiene un '1', el path del ID montado no existe
     if(error == 1){
         return;
     }
 
-    MBR mbrEditar;
-    FILE *disco_Particion = fopen(pathDisco_Particion.c_str(), "rb+");
+    // Extension del reporte a crear
+    QString ext = this->getExtension(path);
 
-    if (disco_Particion != NULL)
-    {
-        rewind(disco_Particion);
-        fread(&mbrEditar, sizeof(mbrEditar), 1, disco_Particion);
-    }
-    else
-    {
-        cout << "Error: El disco para el reporte no existente." << endl;
-        return;
-    }
-    fclose(disco_Particion);
+    // Creacion de carpetas del directorio RUTA
+    QString directorio = this->getDirectorioCarpetas(path);
+
+    string comando = "sudo mkdir -p \'"+ directorio.toStdString()+"\'";
+    system(comando.c_str());
+    string comando2 = "sudo chmod -R 777 \'"+ directorio.toStdString()+"\'";
+    system(comando2.c_str());
 
     // SI EL DISCO EXISTE, SE VERIFICA QUE REPORTE EJECUTAR
     if (name == "mbr")
     {
-        string codigoInterno = "";
-        string size = to_string(mbrEditar.mbr_size);
-        string date(mbrEditar.mbr_date_created);
-        string firma = to_string(mbrEditar.mbr_disk_signature);
-        string fit = "";
-
-        codigoInterno = "<TR>\n"
-                        "<TD><B>MBR_Tamano</B></TD>\n"
-                        "<TD>" +
-                size + "</TD>\n"
-                       "</TR>\n"
-                       "<TR>\n"
-                       "<TD><B>MBR_Fecha_Creacion</B></TD>\n"
-                       "<TD>" +
-                date + "</TD>\n"
-                       "</TR>\n"
-                       "<TR>\n"
-                       "<TD><B>MBR_Disk_Signature</B></TD>\n"
-                       "<TD>" +
-                firma + "</TD>\n"
-                        "</TR>\n"
-                        "<TR>\n"
-                        "<TD><B>MBR_Disk_Fit</B></TD>\n"
-                        "<TD>" +
-                fit + "</TD>\n"
-                      "</TR>\n";
-
-        string codigoParticiones = "";
-        for (int i = 0; i < 4; i++)
-        {
-            if (mbrEditar.mbr_partition[i].part_status == '1')
-            {
-                //string size = to_string(mbrEditar.mbr_particiones[i].size);
-                string name(mbrEditar.mbr_partition[i].part_name);
-                string Estado = "";
-                Estado.push_back(mbrEditar.mbr_partition[i].part_status);
-                string fit = "";
-                fit.push_back(mbrEditar.mbr_partition[i].part_fit);
-                string type = "";
-                type.push_back(mbrEditar.mbr_partition[i].part_type);
-                string part_start = to_string(mbrEditar.mbr_partition[i].part_start);
-                string indice = to_string((i + 1));
-
-                codigoParticiones = codigoParticiones +
-                        "<TR>\n"
-                        "<TD><B>part_Estado_" +
-                        indice + "</B></TD>\n"
-                                 "<TD>" +
-                        Estado + "</TD>\n"
-                                 "</TR>\n"
-                                 "<TR>\n"
-                                 "<TD><B>part_Type_" +
-                        indice + "</B></TD>\n"
-                                 "<TD>" +
-                        type + "</TD>\n"
-                               "</TR>\n"
-                               "<TR>\n"
-                               "<TD><B>part_Fit_" +
-                        indice + "</B></TD>\n"
-                                 "<TD>" +
-                        fit + "</TD>\n"
-                              "</TR>\n"
-                              "<TR>\n"
-                              "<TD><B>part_Start_" +
-                        indice + "</B></TD>\n"
-                                 "<TD>" +
-                        part_start + "</TD>\n"
-                                     "</TR>\n"
-                                     "<TR>\n"
-                                     "<TD><B>part_Name_" +
-                        indice + "</B></TD>\n"
-                                 "<TD>" +
-                        name + "</TD>\n"
-                               "</TR>\n";
-            }
-        }
-
-        string codigo = "digraph  {\n"
-                        "graph[ratio = fill];\n"
-                        " node [label=\"\N\", fontsize=15, shape=plaintext];\n"
-                        "graph [bb=\"0,0,352,154\"];\n"
-                        "arset [label=<\n"
-                        " <TABLE ALIGN=\"LEFT\">\n"
-                        "<TR>\n"
-                        " <TD><B>Nombre</B></TD>\n"
-                        "<TD><B> Valor </B></TD>\n"
-                        "</TR>\n"
-                + codigoInterno +
-                codigoParticiones +
-                "</TABLE>\n"
-                ">, ];\n"
-                "}";
-
-        string path1 = path;
-        string pathPng = path1.substr(0, path1.size() - 4);
-        pathPng = pathPng + ".png";
-
-        FILE *validar = fopen(path1.c_str(), "r");
-        if (validar != NULL)
-        {
-            std::ofstream outfile(path1);
-            outfile << codigo.c_str() << endl;
-            outfile.close();
-            string comando = "dot -Tpng " + path1 + " -o " + pathPng;
-
-            system(comando.c_str());
-            fclose(validar);
-        }
-        else
-        {
-            string comando1 = "mkdir -p \"" + path + "\"";
-            string comando2 = "rmdir \"" + path + "\"";
-            system(comando1.c_str());
-            system(comando2.c_str());
-
-            std::ofstream outfile(path1);
-            outfile << codigo.c_str() << endl;
-            outfile.close();
-            string comando = "dot -Tpng " + path1 + " -o " + pathPng;
-            system(comando.c_str());
-        }
+        this->graficarMBR(pathDisco_Particion, path, ext);
     }
     else if (name == "disk")
     {
-        //string codigoInterno = "";
-        //string size = to_string(mbrEditar.size);
-        //string date(mbrEditar.date);
-        //string firma = to_string(mbrEditar.disk_signature);
-        //string fit = "";
-        //fit.push_back(discoEditar.fit);
-        int acumulado = 0;
-
-        string codigoParticiones = "";
-        string codigoLogicas = "";
-        for (int i = 0; i < 4; i++)
-        {
-            if (mbrEditar.mbr_partition[i].part_status == '1')
-            {
-                string name(mbrEditar.mbr_partition[i].part_name);
-                string Estado = "";
-                Estado.push_back(mbrEditar.mbr_partition[i].part_status);
-                string type = "";
-                type.push_back(mbrEditar.mbr_partition[i].part_type);
-                int porcentaje = ((mbrEditar.mbr_partition[i].part_size * 100) / mbrEditar.mbr_size);
-                acumulado = acumulado + porcentaje;
-                string porcentajeString = to_string(porcentaje);
-
-                if (type == "P")
-                {
-                    codigoParticiones = codigoParticiones +
-                            "<TD>    <TABLE BORDER=\"0\">\n"
-                            "<TR><TD>" +
-                            name + " (" + type + ")"
-                                                 "</TD></TR>\n"
-                                                 "<TR><TD>" +
-                            porcentajeString + "%</TD></TR>\n"
-                                               "</TABLE>\n"
-                                               "</TD>\n";
-                }
-                else if (type == "E")
-                {
-                    int inicioLogicas = mbrEditar.mbr_partition[i].part_start;
-                    EBR logicaI;
-
-                    FILE *disco_PL = fopen(pathDisco_Particion.c_str(), "rb+");
-                    fseek(disco_PL, inicioLogicas, SEEK_SET);
-                    fread(&logicaI, sizeof(EBR), 1, disco_PL);
-
-                    while(logicaI.part_next != -1){
-                        if(logicaI.part_status != '0'){
-                            codigoLogicas = codigoLogicas + "<TD> Logica: "+logicaI.part_name+"</TD>\n <TD>EBR</TD>/n";
-                        }
-                        fseek(disco_PL, logicaI.part_next, SEEK_SET);
-                        fread(&logicaI, sizeof(EBR), 1, disco_PL);
-                    }
-                    fclose(disco_PL);
-
-                    codigoParticiones = codigoParticiones +
-                            "<TD> <TABLE BORDER=\"1\">\n"
-                            "<TR><TD>"+name+ " (EXTENDIDA) -- "+porcentajeString+"% --</TD></TR>\n"
-                                                                                 "<TR><TD><TABLE ALIGN=\"LEFT\">\n"
-                                                                                 "<TR>\n"
-                                                                                 "<TD>EBR</TD>\n" + codigoLogicas +
-                            "</TR></TABLE></TD></TR>\n"
-                            "</TABLE></TD>\n";
-                }
-            }
-        }
-        codigoLogicas = "";
-        int libre = 100 - acumulado;
-        string libreString = to_string(libre);
-
-        if(acumulado < 100){
-            codigoParticiones = codigoParticiones +
-                    "<TD>    <TABLE BORDER=\"0\">\n"
-                    "<TR><TD> Libre "
-                    "</TD></TR>\n"
-                    "<TR><TD>" + libreString + "%</TD></TR>\n"
-                                              "</TABLE>\n"
-                                              "</TD>\n";
-        }
-        string codigo = "digraph  {\n"
-                        "graph[ratio = fill];\n"
-                        " node [label=\"\N\", fontsize=15, shape=plaintext];\n"
-                        "graph [bb=\"0,0,352,154\"];\n"
-                        "arset [label=<\n"
-                        " <TABLE ALIGN=\"LEFT\">\n"
-                        "<TR>\n"
-                        "<TD>MBR</TD>\n"
-                +codigoParticiones +
-                "</TR>\n" +
-                "</TABLE>\n"
-                ">, ];\n"
-                "}";
-
-        string path1 = path;
-        string pathPng = path1.substr(0, path1.size() - 4);
-        pathPng = pathPng + ".png";
-
-        FILE *validar = fopen(path1.c_str(), "r");
-        if (validar != NULL)
-        {
-            std::ofstream outfile(path1);
-            outfile << codigo.c_str() << endl;
-            outfile.close();
-            string comando = "dot -Tpng " + path1 + " -o " + pathPng;
-
-            system(comando.c_str());
-            fclose(validar);
-        }
-        else
-        {
-            string comando1 = "mkdir -p \"" + path + "\"";
-            string comando2 = "rmdir \"" + path + "\"";
-            system(comando1.c_str());
-            system(comando2.c_str());
-
-            std::ofstream outfile(path1);
-            outfile << codigo.c_str() << endl;
-            outfile.close();
-            string comando = "dot -Tpng " + path1 + " -o " + pathPng;
-            system(comando.c_str());
-        }
+        this->graficarDisco(pathDisco_Particion, path, ext);
     }
-    else if (name == "inode")
+    /*else if (name == "inode")
     {
         string codigo = "";
 
@@ -982,39 +739,39 @@ void Rep::Ejecutar(string path, QString name, QString id, Mount mount, string ru
             string comando = "dot -Tpdf " + path1 + " -o " + pathPdf;
             system(comando.c_str());
         }
-    }
+    }*/
     else //inode y file.
     {
         cout << "Error: Nombre de reporte incorrecto." << endl;
     }
+
 }
 
-void Rep::getDatosParticionMontada(QString id, Mount mount, string *path, int *part_starParticion, int *part_sizeParticion, string *part_nameParticion, int *error)
+void Rep::getDatosParticionMontada(QString id, Mount mount, string *path, int *error)
 {
-    QString identificador = id; // Ejemplo: 6413f
-    identificador.remove(0, 2); // Ejemplo: 13f
+    QString identificador = id; // Ejemplo: 6413Disco1
+    identificador.remove(0, 2); // Ejemplo: 13Disco1
 
-    int id_size = identificador.size();
-    char letra = identificador.toStdString().at(id_size - 1); // Ejemplo: f
-    QString numero = identificador.remove(id_size - 1, 1); // Ejemplo: "13"
-    int numeroInt =  numero.toInt(); // Ejemplo: 13
+    QRegularExpressionMatch match;
+    identificador.indexOf(QRegularExpression("[0-9]+"), 0, &match); // Captura 13 en match
+    int indice = identificador.indexOf(QRegularExpression("[A-Za-z]"), 0); // Indice en donde empieza el nombre (una letra)
+    int numeroInt =  match.captured().toInt(); // 13
+    identificador.remove(0, indice); // Disco1
+    string nombre_disco = identificador.toStdString(); // Disco1
+
     bool existePath = false;
-    string nombreParticion = "";
     char pathDisco[100] = "";
-    int sizeParticion = -1;
-    int startParticion = -1;
 
-    //Obtener el nombre de la particion y el path del disco.
+    //Obtener el path del disco.
     for (int i = 0; i < 26; i++){
 
-        if (mount.discos[i].numero == numeroInt){
+        if (strcmp(mount.discos[i].nombre, nombre_disco.c_str()) == 0){
 
             for (int j = 0; j < 99; j++){
 
-                if (mount.discos[i].particiones[j].letra == letra && mount.discos[i].particiones[j].estado == 1){
+                if (mount.discos[i].particiones[j].numero == numeroInt && mount.discos[i].particiones[j].estado == 1){
 
                     strcpy(pathDisco, mount.discos[i].path);
-                    nombreParticion = mount.discos[i].particiones[j].nombre;
                     existePath = true;
                     break;
                 }
@@ -1029,24 +786,9 @@ void Rep::getDatosParticionMontada(QString id, Mount mount, string *path, int *p
         return;
     }
 
-    // Obtener el part_start de la particion y su tamaño
+    // Verificar si existe el disco en el Path obtenido
     FILE *disco_actual = fopen(pathDisco, "rb+");
     if(disco_actual != NULL){
-
-        rewind(disco_actual);
-        MBR mbr_auxiliar;
-        fread(&mbr_auxiliar, sizeof(MBR), 1, disco_actual);
-
-        // Solo se busca en las particiones primarias
-        // NOTA: no se implementa la creacion del sistema de archivos en las logicas
-        for (Partition particion : mbr_auxiliar.mbr_partition) {
-
-            if (particion.part_name == nombreParticion) {
-
-                sizeParticion = particion.part_size;
-                startParticion = particion.part_start;
-            }
-        }
 
         fclose(disco_actual);
     }else{
@@ -1055,84 +797,327 @@ void Rep::getDatosParticionMontada(QString id, Mount mount, string *path, int *p
         return;
     }
 
-    *part_nameParticion = string(nombreParticion);
     *error = 0;
     *path = string(pathDisco);
-    *part_starParticion = startParticion;
-    *part_sizeParticion = sizeParticion;
 }
 
-void Rep::getDirectorio(Structs::arbolVirtual avd, string pathD, Structs::SuperBloque superBloque, string *codigo, string *codigoEnlaces, int pointer)
+/**
+  * Funcion que retorna la extension de un archivo
+  * @param ruta: ruta completa del archivo
+  * @return .pdf, .jpg, .png
+**/
+QString Rep::getExtension(QString ruta)
 {
-    int apuntador = 0;
-    string primero = to_string(avd.array_subdirectorios[0]);
-    string segundo = to_string(avd.array_subdirectorios[1]);
-    string tercero = to_string(avd.array_subdirectorios[2]);
-    string cuarto = to_string(avd.array_subdirectorios[3]);
-    string quinto = to_string(avd.array_subdirectorios[4]);
-    string sexto = to_string(avd.array_subdirectorios[5]);
-    string detalle = to_string(avd.array_subdirectorios[6]);
-    string indirecto = to_string(avd.array_subdirectorios[7]);
+    string aux = ruta.toStdString();
+    string delimiter = ".";
+    size_t pos = 0;
 
-    string nombre = avd.nombre_directorio;
+    while((pos = aux.find(delimiter)) != string::npos){
 
-    if(nombre == "raiz"){
-        nombre = " ";
+        aux.erase(0, pos + delimiter.length());
     }
 
-    string texto = "node"+to_string(pointer)+" [label=\"{\\\\"+nombre+"|{{"+primero+"|<c"+primero+">}|{"+segundo+"|<c"+segundo+">}|{"+tercero+"|"
-                                                                                                                                              "<c"+tercero+">}|{"+cuarto+"|<c"+cuarto+">}|{"+quinto+"|<c"+quinto+">}|{"+sexto+"|<c"+sexto+">}|"+detalle+"|{"+indirecto+"|<c"+indirecto+">}}}\"];\n";
-    string enlace = "";
+    return QString::fromStdString(aux);
+}
 
-    for(int i = 0; i < 6; i++){
-        apuntador = avd.array_subdirectorios[i];
-        if(apuntador == -1){
-            break;
-        }
-        enlace = enlace + "node"+to_string(pointer)+":c"+to_string(apuntador)+" -> node"+to_string(apuntador)+";\n";
+/**
+  * Funcion que devuelve el directorio en donde se creara el reporte
+  * @param ruta: ruta completa del archivo
+**/
+QString Rep::getDirectorioCarpetas(QString ruta)
+{
+    string aux = ruta.toStdString();
+    string delimiter = "/";
+    size_t pos = 0;
+    string res = "";
+
+    while((pos = aux.find(delimiter)) != string::npos){
+        res += aux.substr(0,pos) + "/";
+        aux.erase(0, pos + delimiter.length());
     }
+    return QString::fromStdString(res);
+}
 
-    *codigo = *codigo + texto;
-    *codigoEnlaces = *codigoEnlaces + enlace;
+/**
+  * Metodo para generar el reporte del MBR del disco especificado
+  * @param string path: Es la direccion donde se encuentra la particion
+  * @param QString ruta: Es la ruta donde se creara el reporte
+  * @param QString extension: La extension que tendra el reporte .jpg .png ...etc
+**/
+void Rep::graficarMBR(string path, QString ruta, QString extension)
+{
+    FILE *disco_actual;
+    string destinoDot = ruta.toStdString() + ".dot";
+    ofstream file;
 
-    for(int i = 0; i < 6; i++){
-        FILE *bfileC = fopen(pathD.c_str(), "rb+");
-        apuntador = avd.array_subdirectorios[i];
+    if (disco_actual = fopen(path.c_str(), "r")) {
+        file.open(destinoDot);
 
-        if(apuntador == -1){
-            fclose(bfileC);
+        // Validar que se pudo crear el archivo txt, para almacenar el codigo graphviz
+        if (file.fail()) {
+            cout<< "ERROR. No se pudo abrir el archivo txt del dot"<<endl;
             return;
         }
 
-        Structs::arbolVirtual carpetaHijo;
-        // Nos posicionamos en la carpeta hija
-        fseek(bfileC, (superBloque.start_arbol_directorio+(apuntador*sizeof(Structs::arbolVirtual))), SEEK_SET);
-        fread(&carpetaHijo, sizeof(Structs::arbolVirtual), 1, bfileC);
-        fclose(bfileC);
+        //graphDot = fopen("grafica.dot", "w");
+        file << "digraph G{ \n";
+        file << "subgraph cluster{\n label=\"REPORTE DE MBR\"";
+        file << "\ntbl[shape=box,label=<\n";
+        file << "<table border=\'0\' cellborder=\'1\' cellspacing=\'0\' width=\'300\'  height=\'200\' >\n";
+        file << "<tr>  <td width=\'150\'> <b>Nombre</b> </td> <td width=\'150\'> <b>Valor</b> </td>  </tr>\n";
 
-        this->getDirectorio(carpetaHijo, pathD, superBloque, codigo, codigoEnlaces, apuntador);
+        MBR masterBoot;
+        fseek(disco_actual, 0, SEEK_SET);
+        fread(&masterBoot, sizeof(MBR), 1, disco_actual);
+
+        int tamano = masterBoot.mbr_size;
+        file << "<tr>  <td><b>mbr_size</b></td><td>"+ to_string(tamano) +"</td>  </tr>\n";
+
+        string fecha_creacion(masterBoot.mbr_date_created);
+        file << "<tr>  <td bgcolor=\"#8BCEF4\"><b>mbr_date_created</b></td> <td bgcolor=\"#8BCEF4\">"+ fecha_creacion +"</td>  </tr>\n";
+        file << "<tr>  <td><b>mbr_disk_signature</b></td> <td>"+ to_string(masterBoot.mbr_disk_signature) +"</td>  </tr>\n";
+        string disk_fit(1, masterBoot.mbr_disk_fit);
+        file << "<tr>  <td bgcolor=\"#8BCEF4\"><b>mbr_disk_fit</b></td> <td bgcolor=\"#8BCEF4\">"+ disk_fit +"</td>  </tr>\n";
+
+
+        int index_Extendida = -1;
+        for (int i = 0; i < 4; i++){
+
+            if(masterBoot.mbr_partition[i].part_start != -1 && masterBoot.mbr_partition[i].part_status != '1'){
+
+                if(masterBoot.mbr_partition[i].part_type == 'E'){
+                    index_Extendida = i;
+                }
+
+                string estado = "";
+                if(masterBoot.mbr_partition[i].part_status == '0')
+                    estado = "0";
+                else if(masterBoot.mbr_partition[i].part_status == '2')
+                    estado = "2";
+
+                // Fila para graphviz que forma el apartado para el titulo Particion
+                file << "<tr>  <td bgcolor=\"#5588F7\"><b>Particion</b></td> <td bgcolor=\"#5588F7\"></td>  </tr>\n";
+
+                file << "<tr>  <td><b>part_status</b></td> <td>"+ estado +"</td>  </tr>\n";
+                string part_type(1, masterBoot.mbr_partition[i].part_type);
+                file << "<tr>  <td bgcolor=\"#8BCEF4\"><b>part_type</b></td> <td bgcolor=\"#8BCEF4\">"+ part_type +"</td>  </tr>\n";
+                string part_fit(1, masterBoot.mbr_partition[i].part_fit);
+                file << "<tr>  <td><b>part_fit</b></td> <td>"+ part_fit +"</td>  </tr>\n";
+                file << "<tr>  <td bgcolor=\"#8BCEF4\"><b>part_start</b></td> <td bgcolor=\"#8BCEF4\">"+ to_string(masterBoot.mbr_partition[i].part_start) +"</td>  </tr>\n";
+                file << "<tr>  <td><b>part_size</b></td> <td>"+ to_string(masterBoot.mbr_partition[i].part_size) +"</td>  </tr>\n";
+                string part_name(masterBoot.mbr_partition[i].part_name);
+                file << "<tr>  <td bgcolor=\"#8BCEF4\"><b>part_name</b></td> <td bgcolor=\"#8BCEF4\">"+ part_name +"</td>  </tr>\n";
+            }
+        }
+
+        file << "</table>\n";
+        file << ">];\n}\n";
+
+        // Se recorre las logicas dentro de la Extendida
+        if(index_Extendida != -1){
+
+            int index_ebr = 1;
+            EBR extendedBoot;
+            fseek(disco_actual, masterBoot.mbr_partition[index_Extendida].part_start, SEEK_SET);
+
+            while(fread(&extendedBoot, sizeof(EBR), 1, disco_actual) != 0 && (ftell(disco_actual) < masterBoot.mbr_partition[index_Extendida].part_start + masterBoot.mbr_partition[index_Extendida].part_size)) {
+
+                if(extendedBoot.part_status != '1'){
+
+                    file << "subgraph cluster_"+ to_string(index_ebr) +"{\n label=\"EBR_"+ to_string(index_ebr) +"\"\n";
+                    file << "\ntbl_"+ to_string(index_ebr) +"[shape=box, label=<\n ";
+                    file << "<table border=\'0\' cellborder=\'1\' cellspacing=\'0\'  width=\'300\' height=\'160\' >\n ";
+                    file << "<tr>  <td width=\'150\'><b>Nombre</b></td> <td width=\'150\'><b>Valor</b></td>  </tr>\n";
+
+                    string estado = "";
+                    if(extendedBoot.part_status == '0')
+                        estado = "0";
+                    else if(extendedBoot.part_status == '2')
+                        estado = "2";
+
+                    // Fila para graphviz que forma el apartado para el titulo de Particion Logica
+                    file << "<tr>  <td bgcolor=\"#6AD33F\"><b>Particion Logica</b></td bgcolor=\"#6AD33F\"> <td></td>  </tr>\n";
+
+                    file << "<tr>  <td><b>part_status_1</b></td> <td>"+ estado +"</td>  </tr>\n";
+                    string part_fit(1, extendedBoot.part_fit);
+                    file << "<tr>  <td bgcolor=\"#B8F79C\"><b>part_fit_1</b></td> <td bgcolor=\"#B8F79C\">"+ part_fit +"</td>  </tr>\n";
+                    file << "<tr>  <td><b>part_start_1</b></td> <td>"+ to_string(extendedBoot.part_start) +"</td>  </tr>\n";
+                    file << "<tr>  <td bgcolor=\"#B8F79C\"><b>part_size_1</b></td> <td bgcolor=\"#B8F79C\">"+ to_string(extendedBoot.part_size) +"</td>  </tr>\n";
+                    file << "<tr>  <td><b>part_next_1</b></td> <td>"+ to_string(extendedBoot.part_next) +"</td>  </tr>\n";
+                    string part_name(extendedBoot.part_name);
+                    file << "<tr>  <td bgcolor=\"#B8F79C\"><b>part_name_1</b></td> <td bgcolor=\"#B8F79C\">"+ part_name +"</td>  </tr>\n";
+                    file << "</table>\n";
+                    file << ">];\n}\n";
+
+                    index_ebr++;
+                }
+
+                if(extendedBoot.part_next == -1)
+                    break;
+                else
+                    fseek(disco_actual, extendedBoot.part_next, SEEK_SET);
+            }
+        }
+
+        file << "}\n" << endl;
+
+        fclose(disco_actual);
+        file.close();
+        string comando = "dot " + destinoDot + " -o "+ ruta.toStdString() + " -T"+ extension.toStdString();
+        system(comando.c_str());
+        cout << "Reporte MBR generado con exito " << endl;
     }
 
-    //NINGUNO CUMPLE, SE MUEVE AL APUNTADOR INDIRECTO
-    apuntador = avd.avd_siguiente;
+}
 
-    if(apuntador == -1){
-        return;
+/**
+  * Metodo para graficar un disco con la estructura de las particiones
+  * @param string path: Es la direccion donde se encuentra la particion
+  * @param QString ruta: Es la ruta donde se creara el reporte
+  * @param QString extension: La extension que tendra nuestro reporte .jpg .png ...etc
+**/
+void Rep::graficarDisco(string path, QString ruta, QString extension)
+{
+    FILE *disco_actual;
+    FILE *graphDot;
+    string destinoDot = ruta.toStdString() + ".dot";
+
+    if((disco_actual = fopen(path.c_str(), "r"))){
+        graphDot = fopen(destinoDot.c_str(), "w");
+
+        fprintf(graphDot,"digraph G{\n\n");
+        fprintf(graphDot, "  tbl [\n    shape=box\n    label=<\n");
+        fprintf(graphDot, "     <table border=\'0\' cellborder=\'2\' width=\'600\' height=\"200\" color=\'LIGHTSTEELBLUE\'>\n");
+        fprintf(graphDot, "     <tr>\n");
+        fprintf(graphDot, "     <td height=\'200\' width=\'100\'> MBR </td>\n");
+
+        MBR masterboot;
+        fseek(disco_actual, 0, SEEK_SET);
+        fread(&masterboot, sizeof(MBR), 1, disco_actual);
+
+        int total = masterboot.mbr_size;
+
+        for(int i = 0; i < 4; i++){
+
+            int parcial = masterboot.mbr_partition[i].part_size;
+
+            if(masterboot.mbr_partition[i].part_start != -1){//Particion vacia
+
+                double porcentaje_real = parcial/(total/100);
+                double porcentaje_aux = (porcentaje_real*5);
+
+                if(masterboot.mbr_partition[i].part_status != '1'){
+                    if(masterboot.mbr_partition[i].part_type == 'P'){
+
+                        fprintf(graphDot, "     <td height=\'200\' width=\'%.1f\'>PRIMARIA <br/> Ocupado: %.1f%c</td>\n",porcentaje_aux,porcentaje_real,'%');
+
+                        //Verificar que no haya espacio fragmentado
+                        if(i != 3){
+                            int p1 = masterboot.mbr_partition[i].part_start + masterboot.mbr_partition[i].part_size;
+                            int p2 = masterboot.mbr_partition[i+1].part_start;
+                            if(masterboot.mbr_partition[i+1].part_start != -1){
+
+                                if((p2-p1)!=0){//Hay fragmentacion
+                                    int fragmentacion = p2-p1;
+                                    double porcentaje_real = (fragmentacion*100)/total;
+                                    double porcentaje_aux = (porcentaje_real*500)/100;
+                                    fprintf(graphDot,"     <td height=\'200\' width=\'%.1f\'>LIBRE<br/> Ocupado: %.1f%c</td>\n",porcentaje_aux,porcentaje_real,'%');
+                                }
+                            }
+
+                        }else{
+                            int p1 = masterboot.mbr_partition[i].part_start + masterboot.mbr_partition[i].part_size;
+                            int mbr_size = total + (int)sizeof(MBR);
+
+                            if((mbr_size-p1) != 0){//Libre
+                                double libre = (mbr_size - p1) + sizeof(MBR);
+                                double porcentaje_real = (libre*100)/total;
+                                double porcentaje_aux = (porcentaje_real*500)/100;
+                                fprintf(graphDot, "     <td height=\'200\' width=\'%.1f\'>LIBRE<br/> Ocupado: %.1f%c</td>\n",porcentaje_aux, porcentaje_real, '%');
+                            }
+                        }
+                    }else{//Extendida
+                        EBR extendedBoot;
+                        fprintf(graphDot,"     <td  height=\'200\' width=\'%.1f\'>\n     <table border=\'0\'  height=\'200\' WIDTH=\'%.1f\' cellborder=\'1\'>\n",porcentaje_real,porcentaje_real);
+                        fprintf(graphDot,"     <tr>  <td height=\'60\' colspan=\'15\'>EXTENDIDA</td>  </tr>\n     <tr>\n");
+
+                        fseek(disco_actual, masterboot.mbr_partition[i].part_start,SEEK_SET);
+                        fread(&extendedBoot,sizeof(EBR),1,disco_actual);
+
+                        if(extendedBoot.part_size != 0){//Si hay mas de alguna logica
+                            fseek(disco_actual, masterboot.mbr_partition[i].part_start,SEEK_SET);
+
+                            while(fread(&extendedBoot,sizeof (EBR),1,disco_actual) !=0 && (ftell(disco_actual) < (masterboot.mbr_partition[i].part_start + masterboot.mbr_partition[i].part_size))){
+                                parcial = extendedBoot.part_size;
+                                porcentaje_real = (parcial*100)/total;
+
+                                if(porcentaje_real!=0){
+                                    if(extendedBoot.part_status != '1'){
+                                        fprintf(graphDot, "     <td height=\'140\'>EBR</td>\n");
+                                        fprintf(graphDot, "     <td height=\'140\'>LOGICA<br/>Ocupado: %.1f%c</td>\n",porcentaje_real,'%');
+
+                                    }else{//Espacio no asignado
+                                        fprintf(graphDot, "      <td height=\'150\'>LIBRE 1 <br/> Ocupado: %.1f%c</td>\n",porcentaje_real,'%');
+                                    }
+                                    if(extendedBoot.part_next==-1){
+                                        parcial = (masterboot.mbr_partition[i].part_start + masterboot.mbr_partition[i].part_size) - (extendedBoot.part_start + extendedBoot.part_size);
+                                        porcentaje_real = (parcial*100)/total;
+
+                                        if(porcentaje_real!=0){
+                                            fprintf(graphDot, "     <td height=\'150\'>LIBRE 2<br/> Ocupado: %.1f%c </td>\n",porcentaje_real,'%');
+                                        }
+                                        break;
+                                    }else
+                                        fseek(disco_actual,extendedBoot.part_next,SEEK_SET);
+                                }
+                            }
+                        }else{
+                            fprintf(graphDot,"     <td height=\'140\'> Ocupado %.1f%c</td>",porcentaje_real,'%');
+                        }
+                        fprintf(graphDot,"     </tr>\n     </table>\n     </td>\n");
+                        //Verificar que no haya espacio fragmentado
+                        if(i!=3){
+                            int p1 = masterboot.mbr_partition[i].part_start + masterboot.mbr_partition[i].part_size;
+                            int p2 = masterboot.mbr_partition[i+1].part_start;
+
+                            if(masterboot.mbr_partition[i+1].part_start != -1){
+                                if((p2-p1)!=0){//Hay fragmentacion
+                                    int fragmentacion = p2-p1;
+                                    double porcentaje_real = (fragmentacion*100)/total;
+                                    double porcentaje_aux = (porcentaje_real*500)/100;
+                                    fprintf(graphDot,"     <td height=\'200\' width=\'%.1f\'>LIBRE<br/> Ocupado: %.1f%c</td>\n",porcentaje_aux,porcentaje_real,'%');
+                                }
+                            }
+                        }else{
+                            int p1 = masterboot.mbr_partition[i].part_start + masterboot.mbr_partition[i].part_size;
+                            int mbr_size = total + (int)sizeof(MBR);
+
+                            if((mbr_size-p1) != 0){//Libre
+                                double libre = (mbr_size - p1) + sizeof(MBR);
+                                double porcentaje_real = (libre*100)/total;
+                                double porcentaje_aux = (porcentaje_real*500)/100;
+                                fprintf(graphDot, "     <td height=\'200\' width=\'%.1f\'>LIBRE<br/> Ocupado: %.1f%c</td>\n",porcentaje_aux, porcentaje_real, '%');
+                            }
+                        }
+                    }
+                }else{//Espacio no asignado
+                     fprintf(graphDot,"     <td height=\'200\' width=\'%.1f\'>LIBRE <br/> Ocupado: %.1f%c</td>\n",porcentaje_aux,porcentaje_real,'%');
+                }
+            }
+        }
+
+        //fprintf(graphDot,"     <td height='200'> ESPACIO LIBRE <br/> Ocupado: %.1f%c\n     </td>",(100-espacioUsado),'%');
+
+        fprintf(graphDot,"     </tr> \n     </table>        \n>];\n\n}");
+
+        fclose(graphDot);
+        fclose(disco_actual);
+        string comando = "dot -T"+ extension.toStdString() + " " + destinoDot +" -o "+ ruta.toStdString();
+        system(comando.c_str());
+        cout << "Reporte Disco generado con exito " << endl;
+    }else{
+        cout << "ERROR al crear reporte, disco no encontrado" << endl;
     }
-
-    FILE *bfile1 = fopen(pathD.c_str(), "rb+");
-    Structs::arbolVirtual carpetaIndirecta;
-    // Nos posicionamos en la carpeta hija
-    fseek(bfile1, (superBloque.start_arbol_directorio+(apuntador*sizeof(Structs::arbolVirtual))), SEEK_SET);
-    fread(&carpetaIndirecta, sizeof(Structs::arbolVirtual), 1, bfile1);
-
-    enlace = "node"+to_string(pointer)+":c"+to_string(apuntador)+" -> node"+to_string(apuntador)+";\n";
-    *codigoEnlaces = *codigoEnlaces + enlace;
-    fclose(bfile1);
-
-    this->getDirectorio(carpetaIndirecta, pathD, superBloque, codigo, codigoEnlaces, apuntador);
-
-    return;
 }
 
 void Rep::getTreeFile(Structs::arbolVirtual avd, string pathD, Structs::SuperBloque superBloque, string *codigo, string *codigoEnlaces, int pointer, vector<string> path)
@@ -1237,8 +1222,8 @@ void Rep::recorrerDetalle(Structs::detalleDirectorio Archivos, int apuntador, ve
     string indirecto = to_string(Archivos.dd_siguiente);
 
     string texto = "noded"+to_string(apuntador)+" [label=\"{DD "+nombreCarpeta+"|{"+primeroN+"|"+primero+"|<i"+primero+">}"
- "|{"+segundoN+"|"+segundo+"|<i"+segundo+">}|{"+terceroN+"|"+tercero+"|<i"+tercero+">}|{"+cuartoN+"|"+cuarto+""
- "|<i"+cuarto+">}|{"+quintoN+"|"+quinto+"|<i"+quinto+">}|{*|"+indirecto+"|<d"+indirecto+">}}\"];\n";
+                                                                                                                       "|{"+segundoN+"|"+segundo+"|<i"+segundo+">}|{"+terceroN+"|"+tercero+"|<i"+tercero+">}|{"+cuartoN+"|"+cuarto+""
+                                                                                                                                                                                                                                   "|<i"+cuarto+">}|{"+quintoN+"|"+quinto+"|<i"+quinto+">}|{*|"+indirecto+"|<d"+indirecto+">}}\"];\n";
 
     *codigo = *codigo + texto;
 
@@ -1297,7 +1282,7 @@ void Rep::getTreeDirectorio(Structs::arbolVirtual avd, string pathD, Structs::Su
         }
 
         string texto = "node"+to_string(pointer)+" [label=\"{\\\\"+nombre+"|{{"+primero+"|<c"+primero+">}|{"+segundo+"|<c"+segundo+">}|{"+tercero+"|"
-        "<c"+tercero+">}|{"+cuarto+"|<c"+cuarto+">}|{"+quinto+"|<c"+quinto+">}|{"+sexto+"|<c"+sexto+">}|{"+detalle+"|<d"+detalle+">}|{"+indirecto+"|<c"+indirecto+">}}}\"];\n";
+                                                                                                                                                  "<c"+tercero+">}|{"+cuarto+"|<c"+cuarto+">}|{"+quinto+"|<c"+quinto+">}|{"+sexto+"|<c"+sexto+">}|{"+detalle+"|<d"+detalle+">}|{"+indirecto+"|<c"+indirecto+">}}}\"];\n";
 
         *codigo = *codigo + texto;
 
@@ -1363,8 +1348,8 @@ void Rep::recorrerDetalleDirectorio(Structs::detalleDirectorio Archivos, int apu
     string indirecto = to_string(Archivos.dd_siguiente);
 
     string texto = "noded"+to_string(apuntador)+" [label=\"{DD "+nombreCarpeta+"|{"+primeroN+"|"+primero+"|<i"+primero+">}"
-    "|{"+segundoN+"|"+segundo+"|<i"+segundo+">}|{"+terceroN+"|"+tercero+"|<i"+tercero+">}|{"+cuartoN+"|"+cuarto+""
-    "|<i"+cuarto+">}|{"+quintoN+"|"+quinto+"|<i"+quinto+">}|{*|"+indirecto+"|<d"+indirecto+">}}\"];\n";
+                                                                                                                       "|{"+segundoN+"|"+segundo+"|<i"+segundo+">}|{"+terceroN+"|"+tercero+"|<i"+tercero+">}|{"+cuartoN+"|"+cuarto+""
+                                                                                                                                                                                                                                   "|<i"+cuarto+">}|{"+quintoN+"|"+quinto+"|<i"+quinto+">}|{*|"+indirecto+"|<d"+indirecto+">}}\"];\n";
 
     *codigo = *codigo + texto;
 
@@ -1406,7 +1391,7 @@ void Rep::getTreeComplete(Structs::arbolVirtual avd, string pathD, Structs::Supe
     }
 
     string texto = "node"+to_string(pointer)+" [label=\"{\\\\"+nombre+"|{{"+primero+"|<c"+primero+">}|{"+segundo+"|<c"+segundo+">}|{"+tercero+"|"
-      "<c"+tercero+">}|{"+cuarto+"|<c"+cuarto+">}|{"+quinto+"|<c"+quinto+">}|{"+sexto+"|<c"+sexto+">}|{"+detalle+"|<d"+detalle+">}|{"+indirecto+"|<c"+indirecto+">}}}\"];\n";
+                                                                                                                                              "<c"+tercero+">}|{"+cuarto+"|<c"+cuarto+">}|{"+quinto+"|<c"+quinto+">}|{"+sexto+"|<c"+sexto+">}|{"+detalle+"|<d"+detalle+">}|{"+indirecto+"|<c"+indirecto+">}}}\"];\n";
 
     string enlace = "";
     // Recorro Carpetas para generar enlaces
@@ -1487,8 +1472,8 @@ void Rep::recorrerDetalleComplete(Structs::detalleDirectorio Archivos, int apunt
     string indirecto = to_string(Archivos.dd_siguiente);
 
     string texto = "noded"+to_string(apuntador)+" [label=\"{DD "+nombreCarpeta+"|{"+primeroN+"|"+primero+"|<i"+primero+">}"
-            "|{"+segundoN+"|"+segundo+"|<i"+segundo+">}|{"+terceroN+"|"+tercero+"|<i"+tercero+">}|{"+cuartoN+"|"+cuarto+""
-            "|<i"+cuarto+">}|{"+quintoN+"|"+quinto+"|<i"+quinto+">}|{*|"+indirecto+"|<d"+indirecto+">}}\"];\n";
+                                                                                                                       "|{"+segundoN+"|"+segundo+"|<i"+segundo+">}|{"+terceroN+"|"+tercero+"|<i"+tercero+">}|{"+cuartoN+"|"+cuarto+""
+                                                                                                                                                                                                                                   "|<i"+cuarto+">}|{"+quintoN+"|"+quinto+"|<i"+quinto+">}|{*|"+indirecto+"|<d"+indirecto+">}}\"];\n";
 
     *codigo = *codigo + texto;
 

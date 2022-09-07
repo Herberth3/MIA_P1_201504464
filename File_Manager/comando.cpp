@@ -546,7 +546,7 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
                 }
             } else if (ID_param == NAME) {
                 if(this->name_flag == 0){
-                    this->name_valor = valor_param;
+                    this->name_valor = valor_param.toLower();
                     this->name_flag = 1;
                 } else {
                     cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
@@ -958,10 +958,10 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
             return;
         }else {
 
-            if (this->name_valor.toLower() == "mbr" || this->name_valor.toLower() == "disk" || this->name_valor.toLower() == "inode" ||
-                    this->name_valor.toLower() == "journaling" || this->name_valor.toLower() == "block" || this->name_valor.toLower() == "bm_inode" ||
-                    this->name_valor.toLower() == "bm_block" || this->name_valor.toLower() == "tree" || this->name_valor.toLower() == "sb" ||
-                    this->name_valor.toLower() == "file" || this->name_valor.toLower() == "ls") {
+            if (this->name_valor == "mbr" || this->name_valor == "disk" || this->name_valor == "inode" ||
+                    this->name_valor == "journaling" || this->name_valor == "block" || this->name_valor == "bm_inode" ||
+                    this->name_valor == "bm_block" || this->name_valor == "tree" || this->name_valor == "sb" ||
+                    this->name_valor == "file" || this->name_valor == "ls") {
             } else {
                 cout<<"Error. Valor no permitido en NAME de REP: "<<this->fit_valor.toStdString()<<endl;
                 return;
@@ -974,7 +974,7 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
         }
 
         Rep reporte;
-        reporte.Ejecutar(this->path_valor.toStdString(), this->name_valor.toLower(), this->id_valor.toLower(), this->montaje, this->ruta_valor.toStdString());
+        reporte.Ejecutar(this->path_valor, this->name_valor, this->id_valor, this->montaje, this->ruta_valor);
     }
         break;
     default:

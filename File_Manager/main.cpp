@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <QTextStream>
 #include <QString>
+#include <QRegularExpressionMatch>
+#include <QRegularExpression>
 
 using namespace std;
 extern int yyparse();
