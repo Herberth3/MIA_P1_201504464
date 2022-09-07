@@ -731,6 +731,17 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
             }
         }
 
+        // Comprobar que no este montada la particion para poder ELIMINAR PARTICION O AGREGAR/QUITAR ESPACIO
+        if (this->delete_flag == 1 || this->add_flag == 1) {
+
+            bool isMontada = this->existeMontaje(this->path_valor.toStdString(), this->name_valor.toStdString());
+
+            if (isMontada) {
+                cout<<"Error. Desmonte primero la particion para poder realizar la accion solicitada"<<endl;
+                return;
+            }
+        }
+
         Fdisk *fixDisco = new Fdisk(this->size_valor, this->unit_valor, this->path_valor, this->type_valor, this->fit_valor, this->delete_valor, this->name_valor, this->add_valor);
         fixDisco->Ejecutar();
     }
@@ -1022,4 +1033,27 @@ int Comando::getParametroID(QString parametro)
     if(parametro.toLower() == "password") return 15;
     if(parametro.toLower() == "r") return 16;
     if(parametro.toLower() == "ruta") return 17;
+}
+
+bool Comando::existeMontaje(string path, string name_partition)
+{
+    bool existe = false;
+
+    for (int i = 0; i < 26; i++){
+
+        if (strcmp(montaje.discos[i].path, path.c_str())  == 0){
+
+            for (int j = 0; j < 99; j++){
+
+                if (strcmp(montaje.discos[i].particiones[j].nombre,  name_partition.c_str()) == 0 && montaje.discos[i].particiones[j].estado == 1){
+
+                    existe = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    return existe;
+
 }

@@ -77,6 +77,10 @@ private:
       **/
     int getComandoID(QString comando);
     int getParametroID(QString parametro);
+    /**
+      * Retorna FALSO si la particion no esta montada
+    **/
+    bool existeMontaje(string path, string name_partition);
 
 };
 
