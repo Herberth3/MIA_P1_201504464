@@ -130,11 +130,11 @@ void carpeta::getDatosParticionMontada(QString id, Mount mount, string *path, in
     //Obtener el nombre de la particion y el path del disco.
     for (int i = 0; i < 26; i++){
 
-        if (mount.discos[i].numero == numeroInt){
+        if (mount.discos[i].nombre == "nombre"){
 
             for (int j = 0; j < 99; j++){
 
-                if (mount.discos[i].particiones[j].letra == letra && mount.discos[i].particiones[j].estado == 1){
+                if (mount.discos[i].particiones[j].numero == 1 && mount.discos[i].particiones[j].estado == 1){
 
                     strcpy(pathDisco, mount.discos[i].path);
                     nombreParticion = mount.discos[i].particiones[j].nombre;
