@@ -31,6 +31,8 @@ private:
     void graficarTREE(string path, QString ruta, QString extension, int part_start_Partition);
     void graficarInodo(string path, QString ruta, QString extension, int bm_inodo_start, int inodo_start, int bm_block_start);
     void graficarJournal(string path, QString ruta, QString extension, int part_start_SB);
+    void graficarBLOCK(string path, QString ruta, QString extension, int bm_block_start, int block_start, int inodo_start);
+    void graficarBitMap(string path, QString ruta, int bm_i_b_start, int i_b_count);
 
 };
 

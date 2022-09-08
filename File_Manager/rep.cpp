@@ -70,208 +70,55 @@ void Rep::Ejecutar(QString path, QString name, QString id, Mount mount, QString 
     {
         this->graficarJournal(pathDisco_Particion, path, ext, startParticion);
     }
-    /*else if (name == "block")
+    else if (name == "block")
     {
-        string codigo = "";
-        Structs::SuperBloque superBloque;
+        SuperBloque superBloque;
         FILE *disco_particion = fopen(pathDisco_Particion.c_str(), "rb+");
 
         fseek(disco_particion, startParticion, SEEK_SET);
         // Leo el superbloque al inicio de la particion
-        fread(&superBloque, sizeof(Structs::SuperBloque), 1, disco_particion);
+        fread(&superBloque, sizeof(SuperBloque), 1, disco_particion);
 
-        char bit = ' ';
-        for(int i = 0; i < superBloque.detalle_directorio_count; i++){
-            fseek(disco_particion, (superBloque.start_bm_detalle_directorio + i), SEEK_SET);
-            fread(&bit, sizeof(char), 1, disco_particion);
-            codigo = codigo + bit + " | ";
-            if((i+1)%20 == 0){
-                codigo = codigo + "\n";
-            }
-        }
         fclose(disco_particion);
 
-        FILE *validar = fopen(path.c_str(), "r");
-        if (validar != NULL){
-            std::ofstream outfile(path);
-            outfile << codigo.c_str() << endl;
-            outfile.close();
-
-            fclose(validar);
-        } else{
-            string comando1 = "mkdir -p \"" + path + "\"";
-            string comando2 = "rmdir \"" + path + "\"";
-            system(comando1.c_str());
-            system(comando2.c_str());
-
-            std::ofstream outfile(path);
-            outfile << codigo.c_str() << endl;
-            outfile.close();
-        }
+        this->graficarBLOCK(pathDisco_Particion, path, ext, superBloque.s_bm_block_start, superBloque.s_block_start, superBloque.s_inode_start);
 
     }
     else if (name == "bm_inode")
     {
-        string codigo = "";
-        Structs::SuperBloque superBloque;
+        SuperBloque superBloque;
         FILE *disco_particion = fopen(pathDisco_Particion.c_str(), "rb+");
 
         fseek(disco_particion, startParticion, SEEK_SET);
         // Leo el superbloque al inicio de la particion
-        fread(&superBloque, sizeof(Structs::SuperBloque), 1, disco_particion);
+        fread(&superBloque, sizeof(SuperBloque), 1, disco_particion);
 
-        char bit = ' ';
-        for(int i = 0; i<superBloque.inodos_count; i++){
-            fseek(disco_particion, (superBloque.start_bm_inodos + i), SEEK_SET);
-            fread(&bit, sizeof(char), 1, disco_particion);
-            codigo = codigo + bit + " | ";
-            if((i+1)%20 == 0){
-                codigo = codigo + "\n";
-            }
-        }
         fclose(disco_particion);
 
-        FILE *validar = fopen(path.c_str(), "r");
-        if (validar != NULL){
-            std::ofstream outfile(path);
-            outfile << codigo.c_str() << endl;
-            outfile.close();
-
-            fclose(validar);
-        } else{
-            string comando1 = "mkdir -p \"" + path + "\"";
-            string comando2 = "rmdir \"" + path + "\"";
-            system(comando1.c_str());
-            system(comando2.c_str());
-
-            std::ofstream outfile(path);
-            outfile << codigo.c_str() << endl;
-            outfile.close();
-        }
+        this->graficarBitMap(pathDisco_Particion, path, superBloque.s_bm_inode_start, superBloque.s_inodes_count);
     }
     else if (name == "bm_block")
     {
-        string codigo = "";
-
-        Structs::SuperBloque superBloque;
+        SuperBloque superBloque;
         FILE *disco_particion = fopen(pathDisco_Particion.c_str(), "rb+");
+
         fseek(disco_particion, startParticion, SEEK_SET);
         // Leo el superbloque al inicio de la particion
-        fread(&superBloque, sizeof(Structs::SuperBloque), 1, disco_particion);
+        fread(&superBloque, sizeof(SuperBloque), 1, disco_particion);
 
-        char bit = ' ';
-        for(int i = 0; i<superBloque.bloques_count; i++){
-            fseek(disco_particion, (superBloque.start_bm_bloques + i), SEEK_SET);
-            fread(&bit, sizeof(char), 1, disco_particion);
-            codigo = codigo + bit + " | ";
-            if((i+1)%20 == 0){
-                codigo = codigo + "\n";
-            }
-        }
         fclose(disco_particion);
 
-        FILE *validar = fopen(path.c_str(), "r");
-        if (validar != NULL){
-            std::ofstream outfile(path);
-            outfile << codigo.c_str() << endl;
-            outfile.close();
-
-            fclose(validar);
-        } else{
-            string comando1 = "mkdir -p \"" + path + "\"";
-            string comando2 = "rmdir \"" + path + "\"";
-            system(comando1.c_str());
-            system(comando2.c_str());
-
-            std::ofstream outfile(path);
-            outfile << codigo.c_str() << endl;
-            outfile.close();
-        }
+        this->graficarBitMap(pathDisco_Particion, path, superBloque.s_bm_block_start, superBloque.s_blocks_count);
     }
     else if (name == "ls")
     {
         cout<<"Reporte para LS no implementado"<<endl;
     }
-    else if (name == "journaling")
+    else if (name == "file")
     {
-        Structs::SuperBloque superBloque;
-        FILE *disco_particion = fopen(pathDisco_Particion.c_str(), "rb+");
-        fseek(disco_particion, startParticion, SEEK_SET);
-        // Leo el superbloque al inicio de la particion
-        fread(&superBloque, sizeof(Structs::SuperBloque), 1, disco_particion);
-
-        Structs::logBitacora raizBitacora;
-        fseek(disco_particion, superBloque.start_log, SEEK_SET);
-        fread(&raizBitacora, sizeof(Structs::logBitacora), 1, disco_particion);
-        fclose(disco_particion);
-
-        string nodos = "";
-        string nombre = "";
-        string texto = "";
-        string enlace = "";
-        Structs::logBitacora bitacora;
-
-        for(int i =1; i < raizBitacora.size ; i++){
-
-            FILE *disco_particion = fopen(pathDisco_Particion.c_str(), "rb+");
-            fseek(disco_particion, superBloque.start_log + (i * sizeof(Structs::logBitacora)), SEEK_SET);
-            fread(&bitacora, sizeof(Structs::logBitacora), 1, disco_particion);
-
-            nombre = "Log "+to_string(i);
-            texto = "nodeb"+to_string(i)+" [label=\"{"+nombre+"|{{Tipo_Operacion|"+string(bitacora.tipo_operacion)+"}|"
-                                                                                                                   "{Tipo|"+bitacora.tipo+"}|{Path|"+string(bitacora.path)+"}|{Contenido|"+string(bitacora.contenido)+"}|{Fecha Log|"
-                                                                                                                                                                                                                      ""+string(bitacora.log_fecha)+"}|{Size|"+to_string(bitacora.size)+"}}}\"];\n";
-
-            nodos = nodos + texto;
-
-            if(i != 1){
-                enlace = enlace + "nodeb"+to_string(i-1)+" -> nodeb"+to_string(i)+" [color=\"white\"];\n";
-            }
-            fclose(disco_particion);
-        }
-
-        string codigo =
-                "digraph D {\n"
-                "node [shape=record fontname=\"Aria\" style=filled, fillcolor=azure1];\n"
-                + nodos + enlace +
-                "}";
-
-        string path1 = path;
-        string pathPdf = path1.substr(0, path1.size() - 4);
-        pathPdf = pathPdf + ".pdf";
-
-        FILE *validar = fopen(path1.c_str(), "r");
-        if (validar != NULL){
-            std::ofstream outfile(path1);
-            outfile << codigo.c_str() << endl;
-            outfile.close();
-            string comando = "dot -Tpdf " + path1 + " -o " + pathPdf;
-
-            std::ofstream outfile1("/home/herberth/Escritorio/directorio.txt");
-            outfile1 << codigo.c_str() << endl;
-            outfile1.close();
-
-            system(comando.c_str());
-            fclose(validar);
-        } else{
-            string comando1 = "mkdir -p \"" + path + "\"";
-            string comando2 = "rmdir \"" + path + "\"";
-            system(comando1.c_str());
-            system(comando2.c_str());
-
-            std::ofstream outfile(path1);
-            outfile << codigo.c_str() << endl;
-            outfile.close();
-
-            std::ofstream outfile1("/home/herberth/Escritorio/bitacora.txt");
-            outfile1 << codigo.c_str() << endl;
-            outfile1.close();
-            string comando = "dot -Tpdf " + path1 + " -o " + pathPdf;
-            system(comando.c_str());
-        }
+        cout<<"Reporte para FILE no implementado"<<endl;
     }
-    */
-    else //inode y file.
+    else
     {
         cout << "Error: Nombre de reporte incorrecto." << endl;
     }
@@ -1023,4 +870,130 @@ void Rep::graficarJournal(string path, QString ruta, QString extension, int part
     string comando = "dot -T" + extension.toStdString() + " " + destinoDot + " -o "+ ruta.toStdString();
     system(comando.c_str());
     cout << "Reporte Journaling generado con exito " << endl;
+}
+
+/** Metodo para generar el reporte de bloques de una particion
+ * @param string path: Es la direccion donde se encuentra la particion
+ * @param QString ruta: Es la ruta donde se creara el reporte
+ * @param QString extension: La extension que tendra el reporte .jpg|.png|etc
+ * @param int bm_block_start: Byte donde inicia el bitmap de bloques de la particion
+ * @param int block_start: Byte donde inicia la tabla de bloques de la particion
+ * @param int inodo_start: Byte donde inicia la tabla de inodos
+**/
+void Rep::graficarBLOCK(string path, QString ruta, QString extension, int bm_block_start, int block_start, int inodo_start)
+{
+    FILE *disco_actual = fopen(path.c_str(),"r");
+    string destinoDot = ruta.toStdString() + ".dot";
+
+    BloqueCarpeta carpeta;
+    BloqueArchivo archivo;
+    BloqueApuntadores apuntador;
+
+    int aux = bm_block_start;
+    int i = 0;
+    char buffer;
+
+    FILE *graph = fopen(destinoDot.c_str(),"w");
+
+    fprintf(graph,"digraph G{\n\n");
+
+    while(aux < inodo_start){
+
+        fseek(disco_actual, bm_block_start + i, SEEK_SET);
+
+        buffer = static_cast<char>(fgetc(disco_actual));
+        aux++;
+
+        if(buffer == '1'){
+
+            fseek(disco_actual, block_start + static_cast<int>(sizeof(BloqueCarpeta)) * i, SEEK_SET);
+            fread(&carpeta, sizeof(BloqueCarpeta), 1, disco_actual);
+
+            fprintf(graph, "    nodo_%d [ shape=none, fontname=\"Century Gothic\" label=< \n", i);
+            fprintf(graph, "   <table border=\'0\' cellborder='1' cellspacing='0' bgcolor=\"seagreen\">");
+            fprintf(graph, "    <tr> <td colspan=\'2\'> <b>Bloque Carpeta %d</b> </td></tr>\n", i);
+            fprintf(graph, "    <tr> <td bgcolor=\"mediumseagreen\"> b_name </td> <td bgcolor=\"mediumseagreen\"> b_inode </td></tr>\n");
+
+            for(int c = 0; c < 4; c++)
+                fprintf(graph, "    <tr> <td bgcolor=\"white\"> %s </td> <td bgcolor=\"white\"> %d </td></tr>\n", carpeta.b_content[c].b_name, carpeta.b_content[c].b_inodo);
+
+            fprintf(graph, "   </table>>]\n\n");
+
+        }else if(buffer == '2'){
+
+            fseek(disco_actual, block_start + static_cast<int>(sizeof(BloqueArchivo)) * i, SEEK_SET);
+            fread(&archivo, sizeof(BloqueArchivo), 1, disco_actual);
+
+            fprintf(graph, "    nodo_%d [ shape=none, label=< \n", i);
+            fprintf(graph, "   <table border=\'0\' cellborder='1' cellspacing='0' bgcolor=\"sandybrown\">");
+            fprintf(graph, "    <tr> <td colspan=\'2\'> <b>Bloque Archivo %d </b></td></tr>\n", i);
+            fprintf(graph, "    <tr> <td colspan=\'2\' bgcolor=\"white\"> %s </td></tr>\n", archivo.b_content);
+            fprintf(graph, "   </table>>]\n\n");
+
+        }else if(buffer == '3'){
+
+            fseek(disco_actual, block_start + static_cast<int>(sizeof(BloqueApuntadores)) * i, SEEK_SET);
+            fread(&apuntador, sizeof(BloqueApuntadores), 1, disco_actual);
+
+            fseek(disco_actual, block_start + static_cast<int>(sizeof(BloqueApuntadores)) * i, SEEK_SET);
+            fread(&apuntador, sizeof(BloqueApuntadores), 1, disco_actual);
+
+            fprintf(graph, "    bloque_%d [shape=plaintext fontname=\"Century Gothic\" label=< \n", i);
+            fprintf(graph, "   <table border=\'0\' bgcolor=\"khaki\">\n");
+            fprintf(graph, "    <tr> <td> <b>Pointer block %d</b></td></tr>\n", i);
+
+            for(int j = 0; j < 16; j++)
+                fprintf(graph, "    <tr> <td bgcolor=\"white\">%d</td> </tr>\n", apuntador.b_pointer[j]);
+
+            fprintf(graph, "   </table>>]\n\n");
+        }
+        i++;
+    }
+
+    fprintf(graph,"\n}");
+    fclose(graph);
+
+    fclose(disco_actual);
+
+    string comando = "dot -T" + extension.toStdString() + " " + destinoDot + " -o " + ruta.toStdString();
+    system(comando.c_str());
+    cout << "Reporte Block generado con exito " << endl;
+}
+
+/** Metodo para generar el reporte de bitmaps de una particion ya sea de Inodos o Bloques
+ * @param string path: Es la direccion donde se encuentra la particion
+ * @param QString ruta: Es la ruta donde se creara el reporte
+ * @param int bm_i_b_start: Byte donde inicia el bitmap de la particion
+ * @param int i_b_count: numero de bits
+**/
+void Rep::graficarBitMap(string path, QString ruta, int bm_i_b_start, int i_b_count)
+{
+    FILE *disco_actual = fopen(path.c_str(), "rb+");
+
+    char byte;
+    int cont = 0;
+
+    FILE *report = fopen(ruta.toStdString().c_str(), "w+");
+    fseek(report, 0, SEEK_SET);
+
+    for (int i = 0; i < i_b_count; i++) {
+
+        fseek(disco_actual, bm_i_b_start + i, SEEK_SET);
+        byte = static_cast<char>(fgetc(disco_actual));
+
+        if(byte == '0')
+            fprintf(report, "0 ");
+        else
+            fprintf(report, "1 ");
+
+        if(cont == 19){
+            cont = 0;
+            fprintf(report, "\n");
+        }else
+            cont++;
+    }
+    fclose(report);
+
+    fclose(disco_actual);
+    cout << "Reporte BitMap generado con exito " << endl;
 }
