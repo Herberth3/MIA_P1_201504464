@@ -20,7 +20,10 @@ private:
     QString tipo_sistema;
     Mount montaje;
 
-    void getDatosID(QString id, Mount mount, string *path, int *part_starParticion, int *part_sizeParticion, string *part_nameParticion, int * error);
+    void getDatosID(QString id, Mount mount, string *path, int *part_starParticion, int *part_sizeParticion, int * error);
+    void formatoEXT3(int part_start, int part_size, string path);
+    void formatoEXT2(int part_start, int part_size, string path);
+
     string getFecha();
 };
 

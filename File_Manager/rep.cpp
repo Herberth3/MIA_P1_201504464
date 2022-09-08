@@ -7,11 +7,18 @@ Rep::Rep()
 
 void Rep::Ejecutar(QString path, QString name, QString id, Mount mount, QString rute)
 {
-    int startParticion;
     int error = 0;
+    // Para reporte MBR, DISK, SB , TREE
     string pathDisco_Particion= "";
 
-    this->getDatosParticionMontada(id, mount, &pathDisco_Particion, &error);
+    /** EL REPORTE SB, TREE, SE IMPLEMENTO SOLO PARA PARTICIONES PRIMARIAS **/
+    // Para reporte SB, TREE
+    int startParticion;
+
+    // Para reporte SB
+    string nombre_disco;
+
+    this->getDatosParticionMontada(id, mount, &pathDisco_Particion, &nombre_disco, &startParticion, &error);
 
     // Si 'error' obtiene un '1', el path del ID montado no existe
     if(error == 1){
@@ -37,6 +44,14 @@ void Rep::Ejecutar(QString path, QString name, QString id, Mount mount, QString 
     else if (name == "disk")
     {
         this->graficarDisco(pathDisco_Particion, path, ext);
+    }
+    else if (name == "sb")
+    {
+        this->graficarSB(pathDisco_Particion, path, ext, nombre_disco, startParticion);
+    }
+    else if (name == "tree")
+    {
+        this->graficarTREE(pathDisco_Particion, path, ext, startParticion);
     }
     /*else if (name == "inode")
     {
@@ -195,212 +210,6 @@ void Rep::Ejecutar(QString path, QString name, QString id, Mount mount, QString 
             outfile.close();
         }
     }
-    else if (name == "sb")
-    {
-        Structs::SuperBloque superBloque;
-        FILE *disco_particion = fopen(pathDisco_Particion.c_str(), "rb+");
-        fseek(disco_particion, startParticion, SEEK_SET);
-        // Leo el superbloque al inicio de la particion
-        fread(&superBloque, sizeof(Structs::SuperBloque), 1, disco_particion);
-
-        string codigoInterno = "";
-
-        codigoInterno = "<TR>\n"
-                        "<TD><B>Nombre_hd</B></TD>\n"
-                        "<TD>" +
-                string(superBloque.nombre_particion) + "</TD>\n"
-                                                "</TR>\n"
-                                                "<TR>\n"
-                                                "<TD><B>Arbol_virtual_count</B></TD>\n"
-                                                "<TD>" +
-                to_string(superBloque.arbol_virtual_count) + "</TD>\n"
-                                                             "</TR>\n"
-                                                             "<TR>\n"
-                                                             "<TD><B>Detalle_Directorio_count</B></TD>\n"
-                                                             "<TD>" +
-                to_string(superBloque.detalle_directorio_count) + "</TD>\n"
-                                                                  "</TR>\n"
-                                                                  "<TR>\n"
-                                                                  "<TD><B>Inodos_Count</B></TD>\n"
-                                                                  "<TD>" +
-                to_string(superBloque.inodos_count) + "</TD>\n"
-                                                      "</TR>\n"
-                                                      "<TR>\n"
-                                                      "<TD><B>Bloques_Count</B></TD>\n"
-                                                      "<TD>" +
-                to_string(superBloque.bloques_count) + "</TD>\n"
-                                                       "</TR>\n"
-                                                       "<TR>\n"
-                                                       "<TD><B>Arbol_Virtual_free</B></TD>\n"
-                                                       "<TD>" +
-                to_string(superBloque.arbol_virtual_free) + "</TD>\n"
-                                                            "</TR>\n"
-                                                            "<TR>\n"
-                                                            "<TD><B>Detalle_Directorio_free</B></TD>\n"
-                                                            "<TD>" +
-                to_string(superBloque.detalle_directorio_free) + "</TD>\n"
-                                                                 "</TR>\n"
-                                                                 "<TR>\n"
-                                                                 "<TD><B>Inodos_free</B></TD>\n"
-                                                                 "<TD>" +
-                to_string(superBloque.inodos_free) + "</TD>\n"
-                                                     "</TR>\n"
-                                                     "<TR>\n"
-                                                     "<TD><B>Bloques_free</B></TD>\n"
-                                                     "<TD>" +
-                to_string(superBloque.bloques_free) + "</TD>\n"
-                                                      "</TR>\n"
-                                                      "<TR>\n"
-                                                      "<TD><B>Fecha_creacion</B></TD>\n"
-                                                      "<TD>" +
-                string(superBloque.date_creacion) + "</TD>\n"
-                                                    "</TR>\n"
-                                                    "<TR>\n"
-                                                    "<TD><B>Fecha_Ultimo_montaje</B></TD>\n"
-                                                    "<TD>" +
-                string(superBloque.date_ultimo_montaje) + "</TD>\n"
-                                                          "</TR>\n"
-                                                          "<TR>\n"
-                                                          "<TD><B>Montajes_Count</B></TD>\n"
-                                                          "<TD>" +
-                to_string(superBloque.montajes_count) + "</TD>\n"
-                                                        "</TR>\n"
-                                                        "<TR>\n"
-                                                        "<TD><B>Start_Bitmap_Arbol_Directorio</B></TD>\n"
-                                                        "<TD>" +
-                to_string(superBloque.start_bm_arbol_directorio) + "</TD>\n"
-                                                                   "</TR>\n"
-                                                                   "<TR>\n"
-                                                                   "<TD><B>Start_Arbol_Directorio</B></TD>\n"
-                                                                   "<TD>" +
-                to_string(superBloque.start_arbol_directorio) + "</TD>\n"
-                                                                "</TR>\n"
-                                                                "<TR>\n"
-                                                                "<TD><B>Start_Bitmap_Detalle_Directorio</B></TD>\n"
-                                                                "<TD>" +
-                to_string(superBloque.start_bm_detalle_directorio) + "</TD>\n"
-                                                                     "</TR>\n"
-                                                                     "<TR>\n"
-                                                                     "<TD><B>Start_Detalle_Directorio</B></TD>\n"
-                                                                     "<TD>" +
-                to_string(superBloque.start_detalle_directorio) + "</TD>\n"
-                                                                  "</TR>\n"
-                                                                  "<TR>\n"
-                                                                  "<TD><B>Start_Bitmap_Inodos</B></TD>\n"
-                                                                  "<TD>" +
-                to_string(superBloque.start_bm_inodos) + "</TD>\n"
-                                                         "</TR>\n"
-                                                         "<TR>\n"
-                                                         "<TD><B>Start_Inodos</B></TD>\n"
-                                                         "<TD>" +
-                to_string(superBloque.start_inodos) + "</TD>\n"
-                                                      "</TR>\n"
-                                                      "<TR>\n"
-                                                      "<TD><B>Start_Bitmap_Bloques</B></TD>\n"
-                                                      "<TD>" +
-                to_string(superBloque.start_bm_bloques) + "</TD>\n"
-                                                          "</TR>\n"
-                                                          "<TR>\n"
-                                                          "<TD><B>Start_Bloques</B></TD>\n"
-                                                          "<TD>" +
-                to_string(superBloque.start_bloques) + "</TD>\n"
-                                                       "</TR>\n"
-                                                       "<TR>\n"
-                                                       "<TD><B>Start_Log</B></TD>\n"
-                                                       "<TD>" +
-                to_string(superBloque.start_log) + "</TD>\n"
-                                                   "</TR>\n"
-                                                   "<TR>\n"
-                                                   "<TD><B>Size_Struct_AVD</B></TD>\n"
-                                                   "<TD>" +
-                to_string(superBloque.size_struct_avd) + "</TD>\n"
-                                                         "</TR>\n"
-                                                         "<TR>\n"
-                                                         "<TD><B>Size_Struct_DD</B></TD>\n"
-                                                         "<TD>" +
-                to_string(superBloque.size_struct_dd) + "</TD>\n"
-                                                        "</TR>\n"
-                                                        "<TR>\n"
-                                                        "<TD><B>Size_Struct_Inodo</B></TD>\n"
-                                                        "<TD>" +
-                to_string(superBloque.size_struct_inodo) + "</TD>\n"
-                                                           "</TR>\n"
-                                                           "<TR>\n"
-                                                           "<TD><B>Size_Struct_Bloque</B></TD>\n"
-                                                           "<TD>" +
-                to_string(superBloque.size_struct_bloque) + "</TD>\n"
-                                                            "</TR>\n"
-                                                            "<TR>\n"
-                                                            "<TD><B>First_free_avd</B></TD>\n"
-                                                            "<TD>" +
-                to_string(superBloque.first_free_avd) + "</TD>\n"
-                                                        "</TR>\n"
-                                                        "<TR>\n"
-                                                        "<TD><B>First_free_dd</B></TD>\n"
-                                                        "<TD>" +
-                to_string(superBloque.first_free_dd) + "</TD>\n"
-                                                       "</TR>\n"
-                                                       "<TR>\n"
-                                                       "<TD><B>First_free_Inodo</B></TD>\n"
-                                                       "<TD>" +
-                to_string(superBloque.first_free_inodo) + "</TD>\n"
-                                                          "</TR>\n"
-                                                          "<TR>\n"
-                                                          "<TD><B>First_free_Bloque</B></TD>\n"
-                                                          "<TD>" +
-                to_string(superBloque.first_free_bloque) + "</TD>\n"
-                                                           "</TR>\n"
-                                                           "<TR>\n"
-                                                           "<TD><B>Magic_Number</B></TD>\n"
-                                                           "<TD>" +
-                to_string(superBloque.magic_num) + "</TD>\n"
-                                                   "</TR>\n";
-
-        string codigo = "digraph  {\n"
-                        "graph[ratio = fill];\n"
-                        " node [label=\"\N\", fontsize=15, shape=plaintext];\n"
-                        "graph [bb=\"0,0,352,154\"];\n"
-                        "arset [label=<\n"
-                        " <TABLE ALIGN=\"LEFT\">\n"
-                        "<TR>\n"
-                        "<TD colspan = \"3\"><B>SUPERBLOQUE</B></TD>\n"
-                        "</TR>\n"
-                        "<TR>\n"
-                        " <TD><B>Nombre</B></TD>\n"
-                        "<TD><B> Valor </B></TD>\n"
-                        "</TR>\n"
-                + codigoInterno +
-                "</TABLE>\n"
-                ">, ];\n"
-                "}";
-
-        string path1 = path;
-        string pathPng = path1.substr(0, path1.size() - 4);
-        pathPng = pathPng + ".png";
-
-        FILE *validar = fopen(path1.c_str(), "r");
-        if (validar != NULL){
-            std::ofstream outfile(path1);
-            outfile << codigo.c_str() << endl;
-            outfile.close();
-            string comando = "dot -Tpng " + path1 + " -o " + pathPng;
-
-            system(comando.c_str());
-            fclose(validar);
-        } else{
-            string comando1 = "mkdir -p \"" + path + "\"";
-            string comando2 = "rmdir \"" + path + "\"";
-            system(comando1.c_str());
-            system(comando2.c_str());
-
-            std::ofstream outfile(path1);
-            outfile << codigo.c_str() << endl;
-            outfile.close();
-            string comando = "dot -Tpng " + path1 + " -o " + pathPng;
-            system(comando.c_str());
-        }
-
-    }
     else if (name == "ls")
     {
         cout<<"Reporte para LS no implementado"<<endl;
@@ -483,263 +292,7 @@ void Rep::Ejecutar(QString path, QString name, QString id, Mount mount, QString 
             system(comando.c_str());
         }
     }
-    else if (name == "directorio")
-    {
-        Structs::SuperBloque superBloque;
-        FILE *disco_particion = fopen(pathDisco_Particion.c_str(), "rb+");
-        fseek(disco_particion, startParticion, SEEK_SET);
-        // Leo el superbloque al inicio de la particion
-        fread(&superBloque, sizeof(Structs::SuperBloque), 1, disco_particion);
-
-        Structs::arbolVirtual raiz;
-        fseek(disco_particion, superBloque.start_arbol_directorio, SEEK_SET);
-        fread(&raiz, sizeof(Structs::arbolVirtual), 1, disco_particion);
-        fclose(disco_particion);
-
-        string nodos = "";
-        string enlaces = "";
-
-        this->getDirectorio(raiz, pathDisco_Particion, superBloque, &nodos, &enlaces, 0);
-
-        string codigo =
-                "digraph D {\n"
-                "node [shape=record fontname=\"Aria\" style=filled, fillcolor=azure1];\n"
-                + nodos + enlaces +
-                "}";
-        string path1 = path;
-        string pathPdf = path1.substr(0, path1.size() - 4);
-        pathPdf = pathPdf + ".pdf";
-
-        FILE *validar = fopen(path1.c_str(), "r");
-        if (validar != NULL){
-            std::ofstream outfile(path1);
-            outfile << codigo.c_str() << endl;
-            outfile.close();
-            string comando = "dot -Tpdf " + path1 + " -o " + pathPdf;
-
-            std::ofstream outfile1("/home/herberth/Escritorio/directorio.txt");
-            outfile1 << codigo.c_str() << endl;
-            outfile1.close();
-
-            system(comando.c_str());
-            fclose(validar);
-        } else{
-            string comando1 = "mkdir -p \"" + path + "\"";
-            string comando2 = "rmdir \"" + path + "\"";
-            system(comando1.c_str());
-            system(comando2.c_str());
-
-            std::ofstream outfile(path1);
-            outfile << codigo.c_str() << endl;
-            outfile.close();
-
-            std::ofstream outfile1("/home/herberth/Escritorio/directorio.txt");
-            outfile1 << codigo.c_str() << endl;
-            outfile1.close();
-            string comando = "dot -Tpdf " + path1 + " -o " + pathPdf;
-            system(comando.c_str());
-        }
-    }
-    else if (name == "tree_file")
-    {
-        string route;
-
-        if(rute != ""){
-            route = rute;
-        }else{
-            cout << "Ingresa la direccion del archivo que deseas reportar: " << endl;
-            cin >> route;
-        }
-
-        vector<string> pathArray;
-        stringstream total(route);
-        string tmp;
-
-        while (getline(total, tmp, '/'))
-        {
-            if(tmp!=""){
-                pathArray.push_back(tmp);
-            }
-        }
-
-        Structs::SuperBloque superBloque;
-        FILE *disco_particion = fopen(pathDisco_Particion.c_str(), "rb+");
-        fseek(disco_particion, startParticion, SEEK_SET);
-        // Leo el superbloque al inicio de la particion
-        fread(&superBloque, sizeof(Structs::SuperBloque), 1, disco_particion);
-
-        Structs::arbolVirtual raiz;
-        fseek(disco_particion, superBloque.start_arbol_directorio, SEEK_SET);
-        fread(&raiz, sizeof(Structs::arbolVirtual), 1, disco_particion);
-        fclose(disco_particion);
-
-        string nodos = "";
-        string enlaces = "";
-
-        this->getTreeFile(raiz, pathDisco_Particion, superBloque, &nodos, &enlaces, 0, pathArray);
-
-        string codigo =
-                "digraph D {\n"
-                "rankdir=\"LR\";"
-                "node [shape=record fontname=\"Aria\" style=filled, fillcolor=azure1];\n"
-                + nodos + enlaces +
-                "}";
-
-        string path1 = path;
-        string pathPdf = path1.substr(0, path1.size() - 4);
-        pathPdf = pathPdf + ".pdf";
-
-        FILE *validar = fopen(path1.c_str(), "r");
-        if (validar != NULL){
-            std::ofstream outfile(path1);
-            outfile << codigo.c_str() << endl;
-            outfile.close();
-            string comando = "dot -Tpdf " + path1 + " -o " + pathPdf;
-
-            system(comando.c_str());
-            fclose(validar);
-        } else{
-            string comando1 = "mkdir -p \"" + path + "\"";
-            string comando2 = "rmdir \"" + path + "\"";
-            system(comando1.c_str());
-            system(comando2.c_str());
-
-            std::ofstream outfile(path1);
-            outfile << codigo.c_str() << endl;
-            outfile.close();
-            string comando = "dot -Tpdf " + path1 + " -o " + pathPdf;
-            system(comando.c_str());
-        }
-    }
-    else if (name == "tree_directorio")
-    {
-        string route;
-        if(rute != ""){
-            route = rute;
-        }else{
-            cout << "Ingresa la direccion de la carpeta que deseas reportar: " << endl;
-            cin >> route;
-        }
-
-        vector<string> pathArray;
-        stringstream total(route);
-        string tmp;
-
-        while (getline(total, tmp, '/'))
-        {
-            if(tmp!=""){
-                pathArray.push_back(tmp);
-            }
-        }
-
-        Structs::SuperBloque superBloque;
-        FILE *disco_particion = fopen(pathDisco_Particion.c_str(), "rb+");
-        fseek(disco_particion, startParticion, SEEK_SET);
-        // Leo el superbloque al inicio de la particion
-        fread(&superBloque, sizeof(Structs::SuperBloque), 1, disco_particion);
-
-        Structs::arbolVirtual raiz;
-        fseek(disco_particion, superBloque.start_arbol_directorio, SEEK_SET);
-        fread(&raiz, sizeof(Structs::arbolVirtual), 1, disco_particion);
-        fclose(disco_particion);
-
-        string nodos = "";
-        string enlaces = "";
-
-        this->getTreeDirectorio(raiz, pathDisco_Particion, superBloque, &nodos, &enlaces, 0, pathArray);
-
-        string codigo =
-                "digraph D {\n"
-                "node [shape=record fontname=\"Aria\" style=filled, fillcolor=azure1];\n"
-                + nodos + enlaces +
-                "}";
-
-        string path1 = path;
-        string pathPdf = path1.substr(0, path1.size() - 4);
-        pathPdf = pathPdf + ".pdf";
-
-        FILE *validar = fopen(path1.c_str(), "r");
-        if (validar != NULL){
-            std::ofstream outfile(path1);
-            outfile << codigo.c_str() << endl;
-            outfile.close();
-            string comando = "dot -Tpdf " + path1 + " -o " + pathPdf;
-
-            system(comando.c_str());
-            fclose(validar);
-        } else{
-            string comando1 = "mkdir -p \"" + path + "\"";
-            string comando2 = "rmdir \"" + path + "\"";
-            system(comando1.c_str());
-            system(comando2.c_str());
-
-            std::ofstream outfile(path1);
-            outfile << codigo.c_str() << endl;
-            outfile.close();
-            string comando = "dot -Tpdf " + path1 + " -o " + pathPdf;
-            system(comando.c_str());
-        }
-    }
-    else if (name == "tree_complete")
-    {
-        Structs::SuperBloque superBloque;
-        FILE *disco_particion = fopen(pathDisco_Particion.c_str(), "rb+");
-        fseek(disco_particion, startParticion, SEEK_SET);
-        // Leo el superbloque al inicio de la particion
-        fread(&superBloque, sizeof(Structs::SuperBloque), 1, disco_particion);
-
-        Structs::arbolVirtual raiz;
-        fseek(disco_particion, superBloque.start_arbol_directorio, SEEK_SET);
-        fread(&raiz, sizeof(Structs::arbolVirtual), 1, disco_particion);
-        fclose(disco_particion);
-
-        string nodos = "";
-        string enlaces = "";
-
-        this->getTreeComplete(raiz, pathDisco_Particion, superBloque, &nodos, &enlaces, 0);
-
-        string codigo =
-                "digraph D {\n"
-                "node [shape=record fontname=\"Aria\" style=filled, fillcolor=azure1];\n"
-                + nodos + enlaces +
-                "}";
-
-        string path1 = path;
-        string pathPdf = path1.substr(0, path1.size() - 4);
-        pathPdf = pathPdf + ".pdf";
-
-        FILE *validar = fopen(path1.c_str(), "r");
-        if (validar != NULL){
-            std::ofstream outfile(path1);
-            outfile << codigo.c_str() << endl;
-            outfile.close();
-
-            std::ofstream outfile1("/home/herberth/Escritorio/complete.txt");
-            outfile1 << codigo.c_str() << endl;
-            outfile1.close();
-
-            string comando = "dot -Tpdf " + path1 + " -o " + pathPdf;
-
-            system(comando.c_str());
-            fclose(validar);
-        } else{
-            string comando1 = "mkdir -p \"" + path + "\"";
-            string comando2 = "rmdir \"" + path + "\"";
-            system(comando1.c_str());
-            system(comando2.c_str());
-
-            std::ofstream outfile(path1);
-            outfile << codigo.c_str() << endl;
-            outfile.close();
-
-            std::ofstream outfile1("/home/herberth/Escritorio/complete.txt");
-            outfile1 << codigo.c_str() << endl;
-            outfile1.close();
-
-            string comando = "dot -Tpdf " + path1 + " -o " + pathPdf;
-            system(comando.c_str());
-        }
-    }*/
+    */
     else //inode y file.
     {
         cout << "Error: Nombre de reporte incorrecto." << endl;
@@ -747,7 +300,7 @@ void Rep::Ejecutar(QString path, QString name, QString id, Mount mount, QString 
 
 }
 
-void Rep::getDatosParticionMontada(QString id, Mount mount, string *path, int *error)
+void Rep::getDatosParticionMontada(QString id, Mount mount, string *path, string *name_disk, int *part_starParticion, int *error)
 {
     QString identificador = id; // Ejemplo: 6413Disco1
     identificador.remove(0, 2); // Ejemplo: 13Disco1
@@ -761,6 +314,8 @@ void Rep::getDatosParticionMontada(QString id, Mount mount, string *path, int *e
 
     bool existePath = false;
     char pathDisco[100] = "";
+    int startParticion = -1;
+    string nombreParticion = "";
 
     //Obtener el path del disco.
     for (int i = 0; i < 26; i++){
@@ -772,6 +327,7 @@ void Rep::getDatosParticionMontada(QString id, Mount mount, string *path, int *e
                 if (mount.discos[i].particiones[j].numero == numeroInt && mount.discos[i].particiones[j].estado == 1){
 
                     strcpy(pathDisco, mount.discos[i].path);
+                    nombreParticion = mount.discos[i].particiones[j].nombre;
                     existePath = true;
                     break;
                 }
@@ -790,6 +346,20 @@ void Rep::getDatosParticionMontada(QString id, Mount mount, string *path, int *e
     FILE *disco_actual = fopen(pathDisco, "rb+");
     if(disco_actual != NULL){
 
+        rewind(disco_actual);
+        MBR mbr_auxiliar;
+        fread(&mbr_auxiliar, sizeof(MBR), 1, disco_actual);
+
+        // Solo se busca en las particiones primarias
+        // NOTA: no se implementa la creacion del sistema de archivos en las logicas
+        for (Partition particion : mbr_auxiliar.mbr_partition) {
+
+            if (strcmp(particion.part_name, nombreParticion.c_str()) == 0) {
+
+                startParticion = particion.part_start;
+            }
+        }
+
         fclose(disco_actual);
     }else{
         cout << "Error. El PATH no fue encontrado." << endl;
@@ -799,6 +369,8 @@ void Rep::getDatosParticionMontada(QString id, Mount mount, string *path, int *e
 
     *error = 0;
     *path = string(pathDisco);
+    *part_starParticion = startParticion;
+    *name_disk = nombre_disco;
 }
 
 /**
@@ -1118,6 +690,248 @@ void Rep::graficarDisco(string path, QString ruta, QString extension)
     }else{
         cout << "ERROR al crear reporte, disco no encontrado" << endl;
     }
+}
+
+/** Metodo para generar el reporte del SuperBloque de una particion
+ * @param string path: Es la direccion donde se encuentra la particion
+ * @param QString ruta: Es la ruta donde se creara el reporte
+ * @param QString extension: La extension que tendra el reporte .jpg .png ...etc
+ * @param int part_start_SB: Byte donde inicia el super bloque
+**/
+void Rep::graficarSB(string path, QString ruta, QString extension, string name_disk, int part_start_SB)
+{
+    FILE* disco_actual = fopen(path.c_str(),"r");
+    string destinoDot = ruta.toStdString() + ".dot";
+    SuperBloque super;
+
+    // Se recupera la estructura del SB
+    fseek(disco_actual, part_start_SB, SEEK_SET);
+    fread(&super, sizeof (super), 1, disco_actual);
+
+    FILE *graph = fopen(destinoDot.c_str(), "w");
+
+    fprintf(graph,"digraph G{\n");
+    fprintf(graph, "    nodo [shape=none, fontname=\"Century Gothic\" label=<");
+    fprintf(graph, "   <table border=\'0\' cellborder='1\' cellspacing=\'0\' bgcolor=\"cornflowerblue\">");
+    fprintf(graph, "    <tr> <td COLSPAN=\'2\'> <b>SUPERBLOQUE</b> </td></tr>\n");
+
+    fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> sb_nombre_hd </td> <td bgcolor=\"white\"> %s </td> </tr>\n", name_disk.c_str());
+
+    fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> s_inodes_count </td> <td bgcolor=\"white\"> %d </td> </tr>\n", super.s_inodes_count);
+    fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> s_blocks_count </td> <td bgcolor=\"white\"> %d </td> </tr>\n", super.s_blocks_count);
+    fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> s_free_block_count </td> <td bgcolor=\"white\"> %d </td> </tr>\n", super.s_free_blocks_count);
+    fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> s_free_inodes_count </td> <td bgcolor=\"white\"> %d </td> </tr>\n", super.s_free_inodes_count);
+    fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> s_mtime </td> <td bgcolor=\"white\"> %s </td></tr>\n", super.s_mtime);
+    fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> s_umtime </td> <td bgcolor=\"white\"> %s </td> </tr>\n", super.s_umtime);
+    fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> s_mnt_count </td> <td bgcolor=\"white\"> %d </td> </tr>\n", super.s_mnt_count);
+    fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> s_magic </td> <td bgcolor=\"white\"> %d </td> </tr>\n", super.s_magic);
+    fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> s_inode_size </td> <td bgcolor=\"white\"> %d </td> </tr>\n", super.s_inode_size);
+    fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> s_block_size </td> <td bgcolor=\"white\"> %d </td> </tr>\n", super.s_block_size);
+    fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> s_first_ino </td> <td bgcolor=\"white\"> %d </td> </tr>\n", super.s_first_ino);
+    fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> s_first_blo </td> <td bgcolor=\"white\"> %d </td> </tr>\n", super.s_first_blo);
+    fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> s_bm_inode_start </td> <td bgcolor=\"white\"> %d </td></tr>\n", super.s_bm_inode_start);
+    fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> s_bm_block_start </td> <td bgcolor=\"white\"> %d </td> </tr>\n", super.s_bm_block_start);
+    fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> s_inode_start </td> <td bgcolor=\"white\"> %d </td> </tr>\n", super.s_inode_start);
+    fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> s_block_start </td> <td bgcolor=\"white\"> %d </td> </tr>\n", super.s_block_start);
+    fprintf(graph, "   </table>>]\n");
+    fprintf(graph,"\n}");
+    fclose(graph);
+
+    fclose(disco_actual);
+
+    string comando = "dot -T"+extension.toStdString() + " " + destinoDot +" -o " + ruta.toStdString();
+    system(comando.c_str());
+    cout << "Reporte SuperBloque generado con exito " << endl;
+}
+
+void Rep::graficarTREE(string path, QString ruta, QString extension, int part_start_Partition)
+{
+    FILE *disco_actual = fopen(path.c_str(),"r");
+    string destinoDot = ruta.toStdString() + ".dot";
+
+    SuperBloque super;
+    InodoTable inodo;
+    BloqueCarpeta carpeta;
+    BloqueArchivo archivo;
+    BloqueApuntadores apuntador;
+
+    fseek(disco_actual, part_start_Partition, SEEK_SET);
+    fread(&super, sizeof(SuperBloque), 1, disco_actual);
+
+    int aux = super.s_bm_inode_start;
+    int i = 0;
+
+    char buffer;
+
+    FILE *graph = fopen(destinoDot.c_str(), "w");
+
+    fprintf(graph, "digraph G{\n\n");
+    fprintf(graph, "    rankdir=\"LR\" \n");
+
+    //Creamos los inodos
+    while(aux < super.s_bm_block_start){
+
+        fseek(disco_actual, super.s_bm_inode_start + i, SEEK_SET);
+        buffer = static_cast<char>(fgetc(disco_actual));
+        aux++;
+        int port = 0;
+
+        if(buffer == '1'){
+            fseek(disco_actual, super.s_inode_start + static_cast<int>(sizeof(InodoTable)) * i, SEEK_SET);
+            fread(&inodo, sizeof(InodoTable), 1, disco_actual);
+
+            fprintf(graph, "    inodo_%d [ shape=plaintext fontname=\"Century Gothic\" label=<\n",i);
+            fprintf(graph, "   <table bgcolor=\"royalblue\" border=\'0\' >");
+            fprintf(graph, "    <tr> <td colspan=\'2\'><b>Inode %d</b></td></tr>\n",i);
+            fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> i_uid </td> <td bgcolor=\"white\"> %d </td>  </tr>\n", inodo.i_uid);
+            fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> i_gid </td> <td bgcolor=\"white\"> %d </td>  </tr>\n", inodo.i_gid);
+            fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> i_size </td><td bgcolor=\"white\"> %d </td> </tr>\n", inodo.i_size);
+            fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> i_atime </td> <td bgcolor=\"white\"> %s </td> </tr>\n", inodo.i_atime);
+            fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> i_ctime </td> <td bgcolor=\"white\"> %s </td> </tr>\n", inodo.i_ctime);
+            fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> i_mtime </td> <td bgcolor=\"white\"> %s </td> </tr>\n", inodo.i_mtime);
+
+            for(int b = 0; b < 15; b++){
+                fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> i_block_%d </td> <td bgcolor=\"white\" port=\"f%d\"> %d </td></tr>\n", port, b, inodo.i_block[b]);
+                port++;
+            }
+
+            fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> i_type </td> <td bgcolor=\"white\"> %c </td>  </tr>\n", inodo.i_type);
+            fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> i_perm </td> <td bgcolor=\"white\"> %d </td>  </tr>\n", inodo.i_perm);
+            fprintf(graph, "   </table>>]\n\n");
+
+            //Creamos los bloques relacionados al inodo
+            for (int j = 0; j < 15; j++) {
+                port = 0;
+
+                if(inodo.i_block[j] != -1){
+
+                    fseek(disco_actual, super.s_bm_block_start + inodo.i_block[j], SEEK_SET);
+                    buffer = static_cast<char>(fgetc(disco_actual));
+
+                    if(buffer == '1'){//Bloque carpeta
+                        fseek(disco_actual, super.s_block_start + static_cast<int>(sizeof(BloqueCarpeta)) * inodo.i_block[j], SEEK_SET);
+                        fread(&carpeta, sizeof(BloqueCarpeta), 1, disco_actual);
+
+                        fprintf(graph, "    bloque_%d [shape=plaintext fontname=\"Century Gothic\" label=< \n", inodo.i_block[j]);
+                        fprintf(graph, "   <table bgcolor=\"seagreen\" border=\'0\'>\n");
+                        fprintf(graph, "    <tr> <td colspan=\'2\'><b>Folder block %d</b></td></tr>\n", inodo.i_block[j]);
+                        fprintf(graph, "    <tr> <td bgcolor=\"mediumseagreen\"> b_name </td> <td bgcolor=\"mediumseagreen\"> b_inode </td></tr>\n");
+
+                        for(int c = 0;c < 4; c++){
+                            fprintf(graph, "    <tr> <td bgcolor=\"white\" > %s </td> <td bgcolor=\"white\"  port=\"f%d\"> %d </td></tr>\n", carpeta.b_content[c].b_name, port, carpeta.b_content[c].b_inodo);
+                            port++;
+                        }
+
+                        fprintf(graph, "   </table>>]\n\n");
+
+                        //Relacion de bloques a inodos
+                        for(int c = 0; c < 4; c++){
+                            if(carpeta.b_content[c].b_inodo !=-1){
+                                if(strcmp(carpeta.b_content[c].b_name,".")!=0 && strcmp(carpeta.b_content[c].b_name,"..")!=0)
+                                    fprintf(graph, "    bloque_%d:f%d -> inodo_%d;\n",inodo.i_block[j],c,carpeta.b_content[c].b_inodo);
+                            }
+                        }
+
+                    }else if(buffer == '2'){//Bloque archivo
+
+                        fseek(disco_actual, super.s_block_start + static_cast<int>(sizeof(BloqueArchivo)) * inodo.i_block[j], SEEK_SET);
+                        fread(&archivo, sizeof(BloqueArchivo), 1, disco_actual);
+
+                        fprintf(graph, "    bloque_%d [shape=plaintext fontname=\"Century Gothic\" label=< \n", inodo.i_block[j]);
+                        fprintf(graph, "   <table border=\'0\' bgcolor=\"sandybrown\">\n");
+                        fprintf(graph, "    <tr> <td> <b>File block %d</b></td></tr>\n", inodo.i_block[j]);
+                        fprintf(graph, "    <tr> <td bgcolor=\"white\"> %s </td></tr>\n", archivo.b_content);
+                        fprintf(graph, "   </table>>]\n\n");
+
+                    }else if(buffer == '3'){//Bloque apuntador
+
+                        fseek(disco_actual, super.s_block_start + static_cast<int>(sizeof(BloqueApuntadores)) * inodo.i_block[j], SEEK_SET);
+                        fread(&apuntador, sizeof(BloqueApuntadores), 1, disco_actual);
+
+                        fprintf(graph, "    bloque_%d [shape=plaintext fontname=\"Century Gothic\" label=< \n", inodo.i_block[j]);
+                        fprintf(graph, "   <table border=\'0\' bgcolor=\"khaki\">\n");
+                        fprintf(graph, "    <tr> <td> <b>Pointer block %d</b></td></tr>\n", inodo.i_block[j]);
+
+                        for(int a = 0; a < 16; a++){
+                            fprintf(graph, "    <tr> <td bgcolor=\"white\" port=\"f%d\">%d</td> </tr>\n", port, apuntador.b_pointer[a]);
+                            port++;
+                        }
+
+                        fprintf(graph, "   </table>>]\n\n");
+
+                        //Bloques carpeta/archivos del bloque de apuntadores
+                        for (int x = 0; x < 16; x++) {
+                            port = 0;
+
+                            if(apuntador.b_pointer[x] != -1){
+
+                                fseek(disco_actual, super.s_bm_block_start + apuntador.b_pointer[x], SEEK_SET);
+                                buffer = static_cast<char>(fgetc(disco_actual));
+
+                                if(buffer == '1'){
+                                    fseek(disco_actual, super.s_block_start + static_cast<int>(sizeof(BloqueCarpeta)) * apuntador.b_pointer[x], SEEK_SET);
+                                    fread(&carpeta, sizeof(BloqueCarpeta), 1, disco_actual);
+
+                                    fprintf(graph, "    bloque_%d [shape=plaintext fontname=\"Century Gothic\" label=< \n", apuntador.b_pointer[x]);
+                                    fprintf(graph, "   <table border=\'0\' bgcolor=\"seagreen\" >\n");
+                                    fprintf(graph, "    <tr> <td colspan=\'2\'> <b>Folder block %d</b> </td></tr>\n", apuntador.b_pointer[x]);
+                                    fprintf(graph, "    <tr> <td bgcolor=\"mediumseagreen\"> b_name </td> <td bgcolor=\"mediumseagreen\"> b_inode </td></tr>\n");
+
+                                    for(int c = 0; c < 4; c++){
+                                        fprintf(graph, "    <tr> <td bgcolor=\"white\"> %s </td> <td bgcolor=\"white\" port=\"f%d\"> %d </td></tr>\n", carpeta.b_content[c].b_name, port, carpeta.b_content[c].b_inodo);
+                                        port++;
+                                    }
+
+                                    fprintf(graph, "   </table>>]\n\n");
+
+                                    //Relacion de bloques a inodos
+                                    for(int c = 0; c < 4; c++){
+                                        if(carpeta.b_content[c].b_inodo != -1){
+
+                                            if(strcmp(carpeta.b_content[c].b_name, ".") != 0 && strcmp(carpeta.b_content[c].b_name, "..") != 0)
+                                                fprintf(graph, "    bloque_%d:f%d -> inodo_%d;\n",apuntador.b_pointer[x],c,carpeta.b_content[c].b_inodo);
+                                        }
+                                    }
+
+                                }else if(buffer == '2'){
+
+                                    fseek(disco_actual, super.s_block_start + static_cast<int>(sizeof(BloqueArchivo)) * apuntador.b_pointer[x], SEEK_SET);
+                                    fread(&archivo, sizeof(BloqueArchivo), 1, disco_actual);
+
+                                    fprintf(graph, "    bloque_%d [shape=plaintext fontname=\"Century Gothic\" label=< \n", apuntador.b_pointer[x]);
+                                    fprintf(graph, "   <table border=\'0\' bgcolor=\"sandybrown\">\n");
+                                    fprintf(graph, "    <tr> <td> <b>File block %d</b></td></tr>\n", apuntador.b_pointer[x]);
+                                    fprintf(graph, "    <tr> <td bgcolor=\"white\"> %s </td></tr>\n", archivo.b_content);
+                                    fprintf(graph, "   </table>>]\n\n");
+
+                                }else if(buffer == '3'){
+                                    // NO SE IMPLEMENTO
+                                }
+                            }
+                        }
+
+                        //Relacion de bloques apuntador a bloques archivos/carpetas
+                        for(int b = 0; b < 16; b++){
+                            if(apuntador.b_pointer[b] != -1)
+                                fprintf(graph, "    bloque_%d:f%d -> bloque_%d;\n", inodo.i_block[j], b, apuntador.b_pointer[b]);
+                        }
+                    }
+                    //Relacion de inodos a bloques
+                    fprintf(graph, "    inodo_%d:f%d -> bloque_%d; \n", i, j, inodo.i_block[j]);
+                }
+            }
+        }
+        i++;
+    }
+
+    fprintf(graph,"\n\n}");
+
+    fclose(graph);
+    fclose(disco_actual);
+
+    string comando = "dot -T" + extension.toStdString() + " " + destinoDot + " -o "+ ruta.toStdString();
+    system(comando.c_str());
+    cout << "Reporte Tree generado con exito " << endl;
 }
 
 void Rep::getTreeFile(Structs::arbolVirtual avd, string pathD, Structs::SuperBloque superBloque, string *codigo, string *codigoEnlaces, int pointer, vector<string> path)

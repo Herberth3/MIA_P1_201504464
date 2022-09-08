@@ -21,12 +21,14 @@ public:
     void Ejecutar(QString path, QString name, QString id, Mount mount, QString rute);
 
 private:
-    void getDatosParticionMontada(QString id, Mount mount, string *path, int * error);
+    void getDatosParticionMontada(QString id, Mount mount, string *path, string *name_disk, int *part_starParticion, int * error);
     QString getExtension(QString ruta);
     QString getDirectorioCarpetas(QString ruta);
 
     void graficarMBR(string path, QString ruta, QString extension);
     void graficarDisco(string path, QString ruta, QString extension);
+    void graficarSB(string path, QString ruta, QString extension, string name_disk, int part_start_SB);
+    void graficarTREE(string path, QString ruta, QString extension, int part_start_Partition);
 
     void getTreeFile(Structs::arbolVirtual avd, string pathD, Structs::SuperBloque superBloque, string * codigo, string * codigoEnlaces, int pointer, vector<string> path);
     void recorrerDetalle(Structs::detalleDirectorio Archivos, int apuntador, vector<string> path, string pathDisco, Structs::SuperBloque superBloque, string * codigo, string * codigoEnlaces, string nombreCarpeta);

@@ -283,7 +283,7 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
                 }
             } else if (ID_param == TYPE) {
                 if(this->type_flag == 0){
-                    this->type_valor = valor_param;
+                    this->type_valor = valor_param.toLower();
                     this->type_flag = 1;
                 } else {
                     cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
@@ -291,7 +291,7 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
                 }
             } else if (ID_param == FS) {
                 if(this->fs_flag == 0){
-                    this->fs_valor = valor_param;
+                    this->fs_valor = valor_param.toLower();
                     this->fs_flag = 1;
                 } else {
                     cout<<"Error. Parametro repetido: "<<nombre_param.toStdString()<<endl;
@@ -785,7 +785,7 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
 
         if (this->type_flag == 1) {
 
-            if (this->type_valor.toLower() == "fast" || this->type_valor.toLower() == "full") {
+            if (this->type_valor == "full") {
             }else {
                 cout<<"Error. Valor no permitido en Type: "<<this->type_valor.toStdString()<<endl;
                 return;
@@ -798,7 +798,7 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
 
         if (this->fs_flag == 1) {
 
-            if (this->fs_valor.toLower() == "2fs" || this->fs_valor.toLower() == "3fs") {
+            if (this->fs_valor == "2fs" || this->fs_valor == "3fs") {
             }else {
                 cout<<"Error. Valor no permitido en Fs: "<<this->fs_valor.toStdString()<<endl;
                 return;
@@ -811,7 +811,7 @@ void Comando::Ejecutar(QString command, QList<Parametro *> parameters)
 
         if (this->id_valor.startsWith("64")) {
             Mkfs sistema_archivos;
-            sistema_archivos.Ejecutar(this->id_valor.toLower(), this->type_valor, this->fs_valor, this->montaje);
+            sistema_archivos.Ejecutar(this->id_valor, this->type_valor, this->fs_valor, this->montaje);
         }else {
             cout<<"Error. El ID no cumple con la estructura requerida"<<endl;
             return;
