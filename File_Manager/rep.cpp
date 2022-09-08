@@ -53,46 +53,24 @@ void Rep::Ejecutar(QString path, QString name, QString id, Mount mount, QString 
     {
         this->graficarTREE(pathDisco_Particion, path, ext, startParticion);
     }
-    /*else if (name == "inode")
+    else if (name == "inode")
     {
-        string codigo = "";
-
-        Structs::SuperBloque superBloque;
+        SuperBloque superBloque;
         FILE *disco_particion = fopen(pathDisco_Particion.c_str(), "rb+");
         fseek(disco_particion, startParticion, SEEK_SET);
         // Leo el superbloque al inicio de la particion
-        fread(&superBloque, sizeof(Structs::SuperBloque), 1, disco_particion);
+        fread(&superBloque, sizeof(SuperBloque), 1, disco_particion);
 
-        char bit = ' ';
-        for(int i = 0; i < superBloque.arbol_virtual_count; i++){
-            fseek(disco_particion, (superBloque.start_bm_arbol_directorio + i), SEEK_SET);
-            fread(&bit, sizeof(char), 1, disco_particion);
-            codigo = codigo + bit + " | ";
-            if((i+1)%20 == 0){
-                codigo = codigo + "\n";
-            }
-        }
         fclose(disco_particion);
 
-        FILE *validar = fopen(path.c_str(), "r");
-        if (validar != NULL){
-            std::ofstream outfile(path);
-            outfile << codigo.c_str() << endl;
-            outfile.close();
+        this->graficarInodo(pathDisco_Particion, path, ext, superBloque.s_bm_inode_start, superBloque.s_inode_start, superBloque.s_bm_block_start);
 
-            fclose(validar);
-        } else{
-            string comando1 = "mkdir -p \"" + path + "\"";
-            string comando2 = "rmdir \"" + path + "\"";
-            system(comando1.c_str());
-            system(comando2.c_str());
-
-            std::ofstream outfile(path);
-            outfile << codigo.c_str() << endl;
-            outfile.close();
-        }
     }
-    else if (name == "block")
+    else if (name == "journaling")
+    {
+        this->graficarJournal(pathDisco_Particion, path, ext, startParticion);
+    }
+    /*else if (name == "block")
     {
         string codigo = "";
         Structs::SuperBloque superBloque;
@@ -934,444 +912,115 @@ void Rep::graficarTREE(string path, QString ruta, QString extension, int part_st
     cout << "Reporte Tree generado con exito " << endl;
 }
 
-void Rep::getTreeFile(Structs::arbolVirtual avd, string pathD, Structs::SuperBloque superBloque, string *codigo, string *codigoEnlaces, int pointer, vector<string> path)
+/** Metodo para generar el reporte de inodos de una particion
+ * @param string path: Es la direccion donde se encuentra la particion
+ * @param QString ruta: Es la ruta donde se creara el reporte
+ * @param QString extension: La extension que tendra el reporte .jpg|.png|etc
+ * @param int bm_inodo_start: Byte donde inicia el bitmap de inodos de la particion
+ * @param int inodo_start: Byte donde inicia la tabla de inodos de la particion
+ * @param int bm_block_start: Byte donde inicia el bitmap de bloques de la particion
+**/
+void Rep::graficarInodo(string path, QString ruta, QString extension, int bm_inodo_start, int inodo_start, int bm_block_start)
 {
-    FILE *disco_particion = fopen(pathD.c_str(), "rb+");
+    FILE *disco_actual = fopen(path.c_str(), "r");
+    string destinoDot = ruta.toStdString() + ".dot";
 
-    string primero = to_string(avd.array_subdirectorios[0]);
-    string segundo = to_string(avd.array_subdirectorios[1]);
-    string tercero = to_string(avd.array_subdirectorios[2]);
-    string cuarto = to_string(avd.array_subdirectorios[3]);
-    string quinto = to_string(avd.array_subdirectorios[4]);
-    string sexto = to_string(avd.array_subdirectorios[5]);
-    string detalle = to_string(avd.array_subdirectorios[6]);
-    string indirecto = to_string(avd.array_subdirectorios[7]);
+    InodoTable inodo;
+    int aux = bm_inodo_start;
+    int i = 0;
+    char buffer;
 
-    string nombre = avd.nombre_directorio;
-    if(nombre == "raiz"){
-        nombre = " ";
-    }
+    FILE *graph = fopen(destinoDot.c_str(), "w");
 
-    string texto = "node"+to_string(pointer)+" [label=\"{\\\\"+nombre+"|{{"+primero+"|<c"+primero+">}|{"+segundo+"|<c"+segundo+">}|{"+tercero+"|"
-                                                                                                                                              "<c"+tercero+">}|{"+cuarto+"|<c"+cuarto+">}|{"+quinto+"|<c"+quinto+">}|{"+sexto+"|<c"+sexto+">}|{"+detalle+"|<d"+detalle+">}|{"+indirecto+"|<c"+indirecto+">}}}\"];\n";
+    fprintf(graph,"digraph G{\n\n");
 
-    *codigo = *codigo + texto;
+    while(aux < bm_block_start){
 
-    string enlace = "";
-    int apuntador = 0;
+        fseek(disco_actual, bm_inodo_start + i, SEEK_SET);
 
-    for(int i = 0; i < 6; i++){
-        apuntador = avd.array_subdirectorios[i];
-        Structs::arbolVirtual carpetaHijo;
-        // Nos posicionamos en la carpeta hija
-        fseek(disco_particion, (superBloque.start_arbol_directorio+(apuntador*sizeof(Structs::arbolVirtual))), SEEK_SET);
-        fread(&carpetaHijo, sizeof(Structs::arbolVirtual), 1, disco_particion);
+        buffer = static_cast<char>(fgetc(disco_actual));
+        aux++;
 
-        if(carpetaHijo.nombre_directorio == path[0]){
-            path.erase(path.begin());
-            // Me direcciono a un Detalle de Directorio.
-            if(path.size() == 1){
-                apuntador = carpetaHijo.detalle_directorio;
-                Structs::detalleDirectorio Archivos;
-                // Nos posicionamos en el detalle de directorio.
-                fseek(disco_particion, (superBloque.start_detalle_directorio+(apuntador*sizeof(Structs::detalleDirectorio))), SEEK_SET);
-                fread(&Archivos, sizeof(Structs::detalleDirectorio), 1, disco_particion);
-                fclose(disco_particion);
+        if(buffer == '1'){
 
-                //Creo el enlace
-                enlace = "node"+to_string(apuntador)+":d"+to_string(apuntador)+" -> noded"+to_string(apuntador)+";\n";
-                *codigoEnlaces = *codigoEnlaces + enlace;
+            fseek(disco_actual, inodo_start + static_cast<int>(sizeof(InodoTable)) * i, SEEK_SET);
+            fread(&inodo, sizeof(InodoTable), 1, disco_actual);
 
-                enlace = "node"+to_string(pointer)+":c"+to_string(apuntador)+" -> node"+to_string(apuntador)+";\n";
-                *codigoEnlaces = *codigoEnlaces + enlace;
+            fprintf(graph, "    nodo_%d [ shape=none fontname=\"Century Gothic\" label=<\n",i);
+            fprintf(graph, "   <table border=\'0\' cellborder=\'1\' cellspacing=\'0\' bgcolor=\"royalblue\">");
+            fprintf(graph, "    <tr> <td colspan=\'2\'> <b>Inodo %d</b> </td></tr>\n",i);
+            fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> i_uid </td> <td bgcolor=\"white\"> %d </td>  </tr>\n", inodo.i_uid);
+            fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> i_gid </td> <td bgcolor=\"white\"> %d </td>  </tr>\n", inodo.i_gid);
+            fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> i_size </td> <td bgcolor=\"white\"> %d </td> </tr>\n", inodo.i_size);
+            fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> i_atime </td> <td bgcolor=\"white\"> %s </td>  </tr>\n", inodo.i_atime);
+            fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> i_ctime </td> <td bgcolor=\"white\"> %s </td>  </tr>\n", inodo.i_ctime);
+            fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> i_mtime </td> <td bgcolor=\"white\"> %s </td></tr>\n", inodo.i_mtime);
 
-                string textod = "node"+to_string(apuntador)+" [label=\"{\\\\"+string(carpetaHijo.nombre_directorio)+"|{|}|{|}|{|}|{|}|{|}|{|}|"
-                                                                                                                    "{"+to_string(apuntador)+"|<d"+to_string(apuntador)+">}|{|}}\"];\n";
+            for(int b = 0; b < 15; b++)
+                fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> i_block_%d </td> <td bgcolor=\"white\"> %d </td> </tr>\n", b, inodo.i_block[b]);
 
-                *codigo = *codigo + textod;
-
-                this->recorrerDetalle(Archivos, apuntador, path, pathD, superBloque, codigo, codigoEnlaces, carpetaHijo.nombre_directorio);
-                return;
-            }else{
-
-                fclose(disco_particion);
-                enlace = "node"+to_string(pointer)+":c"+to_string(apuntador)+" -> node"+to_string(apuntador)+";\n";
-                *codigoEnlaces = *codigoEnlaces + enlace;
-                *codigo = *codigo + texto;
-                this->getTreeFile(carpetaHijo, pathD, superBloque, codigo, codigoEnlaces, apuntador, path);
-                return;
-            }
+            fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> i_type </td> <td bgcolor=\"white\"> %c </td> </tr>\n", inodo.i_type);
+            fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"> i_perm </td> <td bgcolor=\"white\"> %d </td> </tr>\n", inodo.i_perm);
+            fprintf(graph, "   </table>>]\n");
         }
+        i++;
     }
 
-    //NINGUNO CUMPLE, SE MUEVE AL APUNTADOR INDIRECTO
-    apuntador = avd.avd_siguiente;
-    Structs::arbolVirtual carpetaIndirecta;
-    // Nos posicionamos en la carpeta hija
-    fseek(disco_particion, (superBloque.start_arbol_directorio+(apuntador*sizeof(Structs::arbolVirtual))), SEEK_SET);
-    fread(&carpetaIndirecta, sizeof(Structs::arbolVirtual), 1, disco_particion);
-    fclose(disco_particion);
+    fprintf(graph,"\n}");
+    fclose(graph);
 
-    enlace = "node"+to_string(pointer)+":c"+to_string(apuntador)+" -> node"+to_string(apuntador)+";\n";
-    *codigoEnlaces = *codigoEnlaces + enlace;
+    fclose(disco_actual);
 
-    this->getTreeFile(carpetaIndirecta, pathD, superBloque, codigo, codigoEnlaces, apuntador, path);
-    return;
+    string comando = "dot -T" + extension.toStdString() + " " + destinoDot +" -o "+ ruta.toStdString();
+    system(comando.c_str());
+    cout << "Reporte de Inodos generado con exito " << endl;
 }
 
-void Rep::recorrerDetalle(Structs::detalleDirectorio Archivos, int apuntador, vector<string> path, string pathDisco, Structs::SuperBloque superBloque, string *codigo, string *codigoEnlaces, string nombreCarpeta)
+/** Metodo para generar el reporte del Journaling de un sistema
+ * @param string path: Es la direccion donde se encuentra la particion
+ * @param QString ruta: Es la ruta donde se creara el reporte
+ * @param QString extension: La extension que tendra el reporte .jpg|.png
+ * @param int part_start_SB: byte donde inicia la particion
+**/
+void Rep::graficarJournal(string path, QString ruta, QString extension, int part_start_SB)
 {
-    FILE *disco_particion = fopen(pathDisco.c_str(), "rb+");
+    FILE *disco_actual = fopen(path.c_str(), "r");
+    string destinoDot = ruta.toStdString() + ".dot";
 
-    string primero = to_string(Archivos.archivos[0].noInodo);
-    string segundo = to_string(Archivos.archivos[1].noInodo);
-    string tercero = to_string(Archivos.archivos[2].noInodo);
-    string cuarto = to_string(Archivos.archivos[3].noInodo);
-    string quinto = to_string(Archivos.archivos[4].noInodo);
-    string primeroN = string(Archivos.archivos[0].nombre_directorio);
-    string segundoN = string(Archivos.archivos[1].nombre_directorio);
-    string terceroN = string(Archivos.archivos[2].nombre_directorio);
-    string cuartoN = string(Archivos.archivos[3].nombre_directorio);
-    string quintoN = string(Archivos.archivos[4].nombre_directorio);
-    string indirecto = to_string(Archivos.dd_siguiente);
+    SuperBloque super;
+    Journal j;
 
-    string texto = "noded"+to_string(apuntador)+" [label=\"{DD "+nombreCarpeta+"|{"+primeroN+"|"+primero+"|<i"+primero+">}"
-                                                                                                                       "|{"+segundoN+"|"+segundo+"|<i"+segundo+">}|{"+terceroN+"|"+tercero+"|<i"+tercero+">}|{"+cuartoN+"|"+cuarto+""
-                                                                                                                                                                                                                                   "|<i"+cuarto+">}|{"+quintoN+"|"+quinto+"|<i"+quinto+">}|{*|"+indirecto+"|<d"+indirecto+">}}\"];\n";
+    fseek(disco_actual, part_start_SB,SEEK_SET);
+    fread(&super, sizeof(SuperBloque), 1, disco_actual);
 
-    *codigo = *codigo + texto;
+    FILE *graph = fopen(destinoDot.c_str(), "w");
 
-    for(int i = 0; i < 5; i++){
+    fprintf(graph,"digraph G{\n");
+    fprintf(graph, "    nodo [shape=none, fontname=\"Century Gothic\" label=<\n");
+    fprintf(graph, "   <table border=\'0\' cellborder='1\' cellspacing=\'0\'>\n");
+    fprintf(graph, "    <tr> <td COLSPAN=\'7\' bgcolor=\"cornflowerblue\"> <b>JOURNALING</b> </td></tr>\n");
+    fprintf(graph, "    <tr> <td bgcolor=\"lightsteelblue\"><b>Operacion</b></td> <td bgcolor=\"lightsteelblue\"><b>Tipo</b></td><td bgcolor=\"lightsteelblue\"><b>Nombre</b></td><td bgcolor=\"lightsteelblue\"><b>Contenido</b></td>\n");
+    fprintf(graph, "    <td bgcolor=\"lightsteelblue\"><b>Propietario</b></td><td bgcolor=\"lightsteelblue\"><b>Permisos</b></td><td bgcolor=\"lightsteelblue\"><b>Fecha</b></td></tr>\n");
 
-        int pointer = Archivos.archivos[i].noInodo;
-        if(path[0] == Archivos.archivos[i].nombre_directorio){
+    fseek(disco_actual, part_start_SB + static_cast<int>(sizeof(SuperBloque)), SEEK_SET);
 
-            string enlace = "noded"+to_string(apuntador)+":i"+to_string(pointer)+" -> nodei"+to_string(pointer)+";\n";
-            *codigoEnlaces = *codigoEnlaces + enlace;
-            //Mando a crear el inodo.
-            Structs::InodoArchivo inodo;
+    while(ftell(disco_actual) < super.s_bm_inode_start){
 
-            fseek(disco_particion, (superBloque.start_inodos + (pointer*(sizeof(Structs::InodoArchivo)))), SEEK_SET);
-            fread(&inodo, sizeof(Structs::InodoArchivo), 1, disco_particion);
-            fclose(disco_particion);
+        fread(&j, sizeof(Journal), 1, disco_actual);
 
-            this->recorrerInodo(inodo, superBloque, pathDisco, codigo, codigoEnlaces, path[0]);
-            return;
+        if(j.journal_type == 0 || j.journal_type == 1){
+
+            fprintf(graph, "<tr><td>%s</td><td>%d</td><td>%s</td><td>%s</td><td>%d</td><td>%d</td><td>%s</td></tr>\n", j.journal_operation_type, j.journal_type, j.journal_name, j.journal_content, j.journal_owner, j.journal_permissions, j.journal_date);
         }
     }
 
-    //Si no lo encuentra se va al apuntador indirecto.
-    int apuntadorA = Archivos.dd_siguiente;
-    Structs::detalleDirectorio detalleIndirecto;
-    // Nos posicionamos en la carpeta hija
-    fseek(disco_particion, (superBloque.start_detalle_directorio+(apuntadorA*sizeof(Structs::detalleDirectorio))), SEEK_SET);
-    fread(&detalleIndirecto, sizeof(Structs::detalleDirectorio), 1, disco_particion);
-    fclose(disco_particion);
-
-    string enlace = "noded"+to_string(apuntador)+":i"+to_string(apuntadorA)+" -> noded"+to_string(apuntadorA)+";\n";
-    *codigoEnlaces = *codigoEnlaces + enlace;
-
-    this->recorrerDetalle(detalleIndirecto, apuntadorA, path,  pathDisco, superBloque, codigo, codigoEnlaces, nombreCarpeta);
-    return;
-}
-
-void Rep::getTreeDirectorio(Structs::arbolVirtual avd, string pathD, Structs::SuperBloque superBloque, string *codigo, string *codigoEnlaces, int pointer, vector<string> path)
-{
-    FILE *disco_particion = fopen(pathD.c_str(), "rb+");
-
-    if(path.size() == 0){
-        string primero = to_string(avd.array_subdirectorios[0]);
-        string segundo = to_string(avd.array_subdirectorios[1]);
-        string tercero = to_string(avd.array_subdirectorios[2]);
-        string cuarto = to_string(avd.array_subdirectorios[3]);
-        string quinto = to_string(avd.array_subdirectorios[4]);
-        string sexto = to_string(avd.array_subdirectorios[5]);
-        string detalle = to_string(avd.array_subdirectorios[6]);
-        string indirecto = to_string(avd.array_subdirectorios[7]);
-        string nombre = avd.nombre_directorio;
-        int detail = avd.array_subdirectorios[6];
-
-        if(nombre == "raiz"){
-            nombre = " ";
-        }
-
-        string texto = "node"+to_string(pointer)+" [label=\"{\\\\"+nombre+"|{{"+primero+"|<c"+primero+">}|{"+segundo+"|<c"+segundo+">}|{"+tercero+"|"
-                                                                                                                                                  "<c"+tercero+">}|{"+cuarto+"|<c"+cuarto+">}|{"+quinto+"|<c"+quinto+">}|{"+sexto+"|<c"+sexto+">}|{"+detalle+"|<d"+detalle+">}|{"+indirecto+"|<c"+indirecto+">}}}\"];\n";
-
-        *codigo = *codigo + texto;
-
-        string enlace = "";
-
-        // Creo el enlace
-        enlace = "node"+to_string(pointer)+":d"+to_string(detail)+" -> noded"+to_string(detail)+";\n";
-        *codigoEnlaces = *codigoEnlaces + enlace;
-
-        Structs::detalleDirectorio Archivos;
-        // Nos posicionamos en el detalle de directorio.
-        fseek(disco_particion, (superBloque.start_detalle_directorio+(detail*sizeof(Structs::detalleDirectorio))), SEEK_SET);
-        fread(&Archivos, sizeof(Structs::detalleDirectorio), 1, disco_particion);
-        fclose(disco_particion);
-
-        this->recorrerDetalleDirectorio(Archivos, detail, pathD, superBloque, codigo, codigoEnlaces, avd.nombre_directorio);
-
-        return;
-    }
-
-    int apuntador = 0;
-
-    for(int i = 0; i < 6; i++){
-
-        apuntador = avd.array_subdirectorios[i];
-        Structs::arbolVirtual carpetaHijo;
-        // Nos posicionamos en la carpeta hija
-        fseek(disco_particion, (superBloque.start_arbol_directorio+(apuntador*sizeof(Structs::arbolVirtual))), SEEK_SET);
-        fread(&carpetaHijo, sizeof(Structs::arbolVirtual), 1, disco_particion);
-
-        if(carpetaHijo.nombre_directorio == path[0]){
-            path.erase(path.begin());
-            fclose(disco_particion);
-
-            this->getTreeDirectorio(carpetaHijo, pathD, superBloque, codigo, codigoEnlaces, apuntador, path);
-            return;
-        }
-    }
-
-    //NINGUNO CUMPLE, SE MUEVE AL APUNTADOR INDIRECTO
-    apuntador = avd.avd_siguiente;
-    Structs::arbolVirtual carpetaIndirecta;
-    // Nos posicionamos en la carpeta hija
-    fseek(disco_particion, (superBloque.start_arbol_directorio+(apuntador*sizeof(Structs::arbolVirtual))), SEEK_SET);
-    fread(&carpetaIndirecta, sizeof(Structs::arbolVirtual), 1, disco_particion);
-    fclose(disco_particion);
-
-    this->getTreeDirectorio(carpetaIndirecta, pathD, superBloque, codigo, codigoEnlaces, apuntador, path);
-}
-
-void Rep::recorrerDetalleDirectorio(Structs::detalleDirectorio Archivos, int apuntador, string pathDisco, Structs::SuperBloque superBloque, string *codigo, string *codigoEnlaces, string nombreCarpeta)
-{
-    string primero = to_string(Archivos.archivos[0].noInodo);
-    string segundo = to_string(Archivos.archivos[1].noInodo);
-    string tercero = to_string(Archivos.archivos[2].noInodo);
-    string cuarto = to_string(Archivos.archivos[3].noInodo);
-    string quinto = to_string(Archivos.archivos[4].noInodo);
-    string primeroN = string(Archivos.archivos[0].nombre_directorio);
-    string segundoN = string(Archivos.archivos[1].nombre_directorio);
-    string terceroN = string(Archivos.archivos[2].nombre_directorio);
-    string cuartoN = string(Archivos.archivos[3].nombre_directorio);
-    string quintoN = string(Archivos.archivos[4].nombre_directorio);
-    string indirecto = to_string(Archivos.dd_siguiente);
-
-    string texto = "noded"+to_string(apuntador)+" [label=\"{DD "+nombreCarpeta+"|{"+primeroN+"|"+primero+"|<i"+primero+">}"
-                                                                                                                       "|{"+segundoN+"|"+segundo+"|<i"+segundo+">}|{"+terceroN+"|"+tercero+"|<i"+tercero+">}|{"+cuartoN+"|"+cuarto+""
-                                                                                                                                                                                                                                   "|<i"+cuarto+">}|{"+quintoN+"|"+quinto+"|<i"+quinto+">}|{*|"+indirecto+"|<d"+indirecto+">}}\"];\n";
-
-    *codigo = *codigo + texto;
-
-    // Se va al apuntador indirecto.
-    int apuntadorA = Archivos.dd_siguiente;
-
-    if(apuntadorA != -1){
-
-        FILE *disco_particion = fopen(pathDisco.c_str(), "rb+");
-        Structs::detalleDirectorio detalleIndirecto;
-        // Nos posicionamos en la carpeta hija
-        fseek(disco_particion, (superBloque.start_detalle_directorio+(apuntadorA*sizeof(Structs::detalleDirectorio))), SEEK_SET);
-        fread(&detalleIndirecto, sizeof(Structs::detalleDirectorio), 1, disco_particion);
-        fclose(disco_particion);
-
-        string enlace = "noded"+to_string(apuntador)+":d"+to_string(apuntadorA)+" -> noded"+to_string(apuntadorA)+";\n";
-        *codigoEnlaces = *codigoEnlaces + enlace;
-
-        this->recorrerDetalleDirectorio(detalleIndirecto, apuntadorA, pathDisco, superBloque, codigo, codigoEnlaces, nombreCarpeta);
-    }
-}
-
-void Rep::getTreeComplete(Structs::arbolVirtual avd, string pathD, Structs::SuperBloque superBloque, string *codigo, string *codigoEnlaces, int pointer)
-{
-    int apuntador = 0;
-    string primero = to_string(avd.array_subdirectorios[0]);
-    string segundo = to_string(avd.array_subdirectorios[1]);
-    string tercero = to_string(avd.array_subdirectorios[2]);
-    string cuarto = to_string(avd.array_subdirectorios[3]);
-    string quinto = to_string(avd.array_subdirectorios[4]);
-    string sexto = to_string(avd.array_subdirectorios[5]);
-    string detalle = to_string(avd.array_subdirectorios[6]);
-    string indirecto = to_string(avd.array_subdirectorios[7]);
-    int detail = avd.array_subdirectorios[6];
-    string nombre = avd.nombre_directorio;
-
-    if(nombre == "raiz"){
-        nombre = " ";
-    }
-
-    string texto = "node"+to_string(pointer)+" [label=\"{\\\\"+nombre+"|{{"+primero+"|<c"+primero+">}|{"+segundo+"|<c"+segundo+">}|{"+tercero+"|"
-                                                                                                                                              "<c"+tercero+">}|{"+cuarto+"|<c"+cuarto+">}|{"+quinto+"|<c"+quinto+">}|{"+sexto+"|<c"+sexto+">}|{"+detalle+"|<d"+detalle+">}|{"+indirecto+"|<c"+indirecto+">}}}\"];\n";
-
-    string enlace = "";
-    // Recorro Carpetas para generar enlaces
-    for(int i = 0; i < 6; i++){
-        apuntador = avd.array_subdirectorios[i];
-
-        if(apuntador == -1){
-            break;
-        }
-        enlace = enlace + "node"+to_string(pointer)+":c"+to_string(apuntador)+" -> node"+to_string(apuntador)+";\n";
-    }
-
-    *codigo = *codigo + texto;
-    *codigoEnlaces = *codigoEnlaces + enlace;
-
-    // Valido si existen archivos en su detalle de directorio
-    FILE *disco_particion = fopen(pathD.c_str(), "rb+");
-    Structs::detalleDirectorio Archivos;
-    // Nos posicionamos en el detalle de directorio
-    fseek(disco_particion, (superBloque.start_detalle_directorio+(detail*sizeof(Structs::detalleDirectorio))), SEEK_SET);
-    fread(&Archivos, sizeof(Structs::detalleDirectorio), 1, disco_particion);
-    fclose(disco_particion);
-
-    if(Archivos.archivos[0].noInodo != -1){ //Tiene al menos un archivo, debo graficarlo.
-        //Creo el enlace
-        enlace = "node"+to_string(pointer)+":d"+to_string(detail)+" -> noded"+to_string(detail)+";\n";
-        *codigoEnlaces = *codigoEnlaces + enlace;
-        recorrerDetalleComplete(Archivos, detail, pathD, superBloque, codigo, codigoEnlaces, nombre);
-    }
-
-    //Creo carpetas
-    for(int i = 0; i<6; i++){
-        apuntador = avd.array_subdirectorios[i];
-
-        if(apuntador == -1){
-            return;
-        }
-        FILE *bfileC = fopen(pathD.c_str(), "rb+");
-        Structs::arbolVirtual carpetaHijo;
-        fseek(bfileC, (superBloque.start_arbol_directorio+(apuntador*sizeof(Structs::arbolVirtual))), SEEK_SET);//nos posicionamos en la carpeta hija
-        fread(&carpetaHijo, sizeof(Structs::arbolVirtual), 1, bfileC);
-        fclose(bfileC);
-        getTreeComplete(carpetaHijo, pathD, superBloque, codigo, codigoEnlaces, apuntador);
-    }
-
-
-
-    //NINGUNO CUMPLE, SE MUEVE AL APUNTADOR INDIRECTO
-    apuntador = avd.avd_siguiente;
-
-    if(apuntador == -1){
-        return;
-    }
-
-    FILE *bfile1 = fopen(pathD.c_str(), "rb+");
-    Structs::arbolVirtual carpetaIndirecta;
-    fseek(bfile1, (superBloque.start_arbol_directorio+(apuntador*sizeof(Structs::arbolVirtual))), SEEK_SET);//nos posicionamos en la carpeta hija
-    fread(&carpetaIndirecta, sizeof(Structs::arbolVirtual), 1, bfile1);
-
-    enlace = "node"+to_string(pointer)+":c"+to_string(apuntador)+" -> node"+to_string(apuntador)+";\n";
-    *codigoEnlaces = *codigoEnlaces + enlace;
-    fclose(bfile1);
-    getTreeComplete(carpetaIndirecta, pathD, superBloque, codigo, codigoEnlaces, apuntador);
-}
-
-void Rep::recorrerDetalleComplete(Structs::detalleDirectorio Archivos, int apuntador, string pathDisco, Structs::SuperBloque superBloque, string *codigo, string *codigoEnlaces, string nombreCarpeta)
-{
-    string primero = to_string(Archivos.archivos[0].noInodo);
-    string segundo = to_string(Archivos.archivos[1].noInodo);
-    string tercero = to_string(Archivos.archivos[2].noInodo);
-    string cuarto = to_string(Archivos.archivos[3].noInodo);
-    string quinto = to_string(Archivos.archivos[4].noInodo);
-    string primeroN = string(Archivos.archivos[0].nombre_directorio);
-    string segundoN = string(Archivos.archivos[1].nombre_directorio);
-    string terceroN = string(Archivos.archivos[2].nombre_directorio);
-    string cuartoN = string(Archivos.archivos[3].nombre_directorio);
-    string quintoN = string(Archivos.archivos[4].nombre_directorio);
-    string indirecto = to_string(Archivos.dd_siguiente);
-
-    string texto = "noded"+to_string(apuntador)+" [label=\"{DD "+nombreCarpeta+"|{"+primeroN+"|"+primero+"|<i"+primero+">}"
-                                                                                                                       "|{"+segundoN+"|"+segundo+"|<i"+segundo+">}|{"+terceroN+"|"+tercero+"|<i"+tercero+">}|{"+cuartoN+"|"+cuarto+""
-                                                                                                                                                                                                                                   "|<i"+cuarto+">}|{"+quintoN+"|"+quinto+"|<i"+quinto+">}|{*|"+indirecto+"|<d"+indirecto+">}}\"];\n";
-
-    *codigo = *codigo + texto;
-
-    for(int i = 0; i < 5; i++){
-        int pointer = Archivos.archivos[i].noInodo;
-        string nombreArchivo = Archivos.archivos[i].nombre_directorio;
-
-        if(pointer == -1){
-            return;
-        }
-
-        FILE *disco_particion = fopen(pathDisco.c_str(), "rb+");
-        string enlace = "noded"+to_string(apuntador)+":i"+to_string(pointer)+" -> nodei"+to_string(pointer)+";\n";
-
-        *codigoEnlaces = *codigoEnlaces + enlace;
-
-        //Mando a crear el inodo.
-        Structs::InodoArchivo inodo;
-        fseek(disco_particion, (superBloque.start_inodos + (pointer*(sizeof(Structs::InodoArchivo)))), SEEK_SET);
-        fread(&inodo, sizeof(Structs::InodoArchivo), 1, disco_particion);
-        fclose(disco_particion);
-        this->recorrerInodo(inodo, superBloque, pathDisco, codigo, codigoEnlaces, nombreArchivo);
-    }
-
-    //se va al apuntador indirecto.
-    int apuntadorA = Archivos.dd_siguiente;
-    if(apuntadorA != -1){
-
-        FILE *disco_particion = fopen(pathDisco.c_str(), "rb+");
-        Structs::detalleDirectorio detalleIndirecto;
-        // Nos posicionamos en la carpeta hija
-        fseek(disco_particion, (superBloque.start_detalle_directorio+(apuntadorA*sizeof(Structs::detalleDirectorio))), SEEK_SET);
-        fread(&detalleIndirecto, sizeof(Structs::detalleDirectorio), 1, disco_particion);
-        fclose(disco_particion);
-
-        string enlace = "noded"+to_string(apuntador)+":d"+to_string(apuntadorA)+" -> noded"+to_string(apuntadorA)+";\n";
-        *codigoEnlaces = *codigoEnlaces + enlace;
-
-        this->recorrerDetalleComplete(detalleIndirecto, apuntadorA, pathDisco, superBloque, codigo, codigoEnlaces, nombreCarpeta);
-    }
-}
-
-void Rep::recorrerInodo(Structs::InodoArchivo inodo, Structs::SuperBloque superBloque, string pathDisco, string *codigo, string *codigoEnlaces, string nombre)
-{
-    string primero = to_string(inodo.array_bloques[0]);
-    string segundo = to_string(inodo.array_bloques[1]);
-    string tercero = to_string(inodo.array_bloques[2]);
-    string cuarto = to_string(inodo.array_bloques[3]);
-    int indirecto = inodo.ap_indirecto;
-
-    string texto = "nodei"+to_string(inodo.count_inodo)+" [label=\"{Inodo "+nombre+"|{"+primero+"|<b"+primero+">}|{"+segundo+"|"
-                                                                                                                             "<b"+segundo+">}|{"+tercero+"|<b"+tercero+">}|{"+cuarto+"|<b"+cuarto+">}|{*"+to_string(indirecto)+"|<i"+to_string(indirecto)+">}}\"];\n";
-
-    *codigo = *codigo + texto;
-
-    for(int i = 0; i < inodo.count_bloques_asignados;i++){
-        int pointer = inodo.array_bloques[i];
-
-        FILE *disco_particion = fopen(pathDisco.c_str(), "rb+");
-        Structs::bloqueDatos bloque;
-        fseek(disco_particion, (superBloque.start_bloques + (pointer * sizeof(Structs::bloqueDatos))), SEEK_SET);
-        fread(&bloque, sizeof(Structs::bloqueDatos), 1, disco_particion);
-        fclose(disco_particion);
-
-        string textoB = "nodeb"+to_string(pointer)+" [label=\""+bloque.db_data+"\"];\n";
-
-        *codigo = *codigo + textoB;
-
-        string enlace = "nodei"+to_string(inodo.count_inodo)+":b"+to_string(pointer)+" -> nodeb"+to_string(pointer)+";\n";
-        *codigoEnlaces = *codigoEnlaces + enlace;
-    }
-
-    //INDIRECTO
-    if(inodo.ap_indirecto != -1){
-
-        FILE *disco_particion2 = fopen(pathDisco.c_str(), "rb+");
-        Structs::InodoArchivo inodoIndirecto;
-        fseek(disco_particion2, (superBloque.start_inodos + (indirecto*(sizeof(Structs::InodoArchivo)))), SEEK_SET);
-        fread(&inodoIndirecto, sizeof(Structs::InodoArchivo), 1, disco_particion2);
-        fclose(disco_particion2);
-
-        string enlace2 = "nodei"+to_string(inodo.count_inodo)+":i"+to_string(indirecto)+" -> nodei"+to_string(indirecto)+";\n";
-        *codigoEnlaces = *codigoEnlaces + enlace2;
-
-        this->recorrerInodo(inodoIndirecto, superBloque, pathDisco, codigo, codigoEnlaces, nombre);
-    }
+    fprintf(graph, "   </table>>]\n");
+    fprintf(graph,"}");
+    fclose(graph);
+
+    fclose(disco_actual);
+
+    string comando = "dot -T" + extension.toStdString() + " " + destinoDot + " -o "+ ruta.toStdString();
+    system(comando.c_str());
+    cout << "Reporte Journaling generado con exito " << endl;
 }

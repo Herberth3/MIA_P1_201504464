@@ -29,14 +29,9 @@ private:
     void graficarDisco(string path, QString ruta, QString extension);
     void graficarSB(string path, QString ruta, QString extension, string name_disk, int part_start_SB);
     void graficarTREE(string path, QString ruta, QString extension, int part_start_Partition);
+    void graficarInodo(string path, QString ruta, QString extension, int bm_inodo_start, int inodo_start, int bm_block_start);
+    void graficarJournal(string path, QString ruta, QString extension, int part_start_SB);
 
-    void getTreeFile(Structs::arbolVirtual avd, string pathD, Structs::SuperBloque superBloque, string * codigo, string * codigoEnlaces, int pointer, vector<string> path);
-    void recorrerDetalle(Structs::detalleDirectorio Archivos, int apuntador, vector<string> path, string pathDisco, Structs::SuperBloque superBloque, string * codigo, string * codigoEnlaces, string nombreCarpeta);
-    void getTreeDirectorio(Structs::arbolVirtual avd, string pathD, Structs::SuperBloque superBloque, string * codigo, string * codigoEnlaces, int pointer, vector<string> path);
-    void recorrerDetalleDirectorio(Structs::detalleDirectorio Archivos, int apuntador, string pathDisco, Structs::SuperBloque superBloque, string * codigo, string * codigoEnlaces, string nombreCarpeta);
-    void getTreeComplete(Structs::arbolVirtual avd, string pathD, Structs::SuperBloque superBloque, string * codigo, string * codigoEnlaces, int pointer);
-    void recorrerDetalleComplete(Structs::detalleDirectorio Archivos, int apuntador, string pathDisco, Structs::SuperBloque superBloque, string * codigo, string * codigoEnlaces, string nombreCarpeta);
-    void recorrerInodo(Structs::InodoArchivo inodo, Structs::SuperBloque superBloque, string pathDisco, string * codigo, string * codigoEnlaces, string nombre);
 };
 
 #endif // REP_H
